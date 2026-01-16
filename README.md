@@ -1,2 +1,2 @@
 # Chimera LMS Backend V2
-Migrating to pGolang based backend
+Migrating to Golang based backend
