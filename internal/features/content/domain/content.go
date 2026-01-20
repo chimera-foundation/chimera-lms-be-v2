@@ -2,7 +2,7 @@ package domain
 
 import (
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared"
-	prog "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/progress_tracker/domain"
+	"github.com/google/uuid"
 )
 
 type ContentType int
@@ -16,6 +16,8 @@ const (
 type Content struct {
 	shared.Base
 
+	LessonID uuid.UUID
+	AssessmentID uuid.UUID
+
 	Type ContentType
-	ProgressTrackers []prog.ProgressTracker
 }
