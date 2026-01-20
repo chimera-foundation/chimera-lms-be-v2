@@ -2,8 +2,7 @@ package domain
 
 import (
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared"
-	m "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/module/domain"
-	e "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/enrollment/domain"
+	"github.com/google/uuid"
 )
 
 type CourseStatus int
@@ -17,12 +16,15 @@ const (
 type Course struct {
 	shared.Base
 
+	OrganizationID uuid.UUID
+	InstructorID uuid.UUID
+	SubjectID uuid.UUID
+	EducationLevelID uuid.UUID
+
 	Title string
 	Description string
 	Status CourseStatus	
 	Price int64 
-	Modules []m.Module
 	GradeLevel int
 	Credits int // for university
-	Enrollments []e.Enrollment
 }
