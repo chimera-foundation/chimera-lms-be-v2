@@ -2,26 +2,15 @@ package domain
 
 import (
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared"
-	u "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/domain"
-	e "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/enrollment/domain"
-)
-
-type SectionRoleType int
-
-const (
-	Student SectionRoleType = iota
-	Teacher
-	Assistant
-	Monitor
+	"github.com/google/uuid"
 )
 
 type Section struct {
 	shared.Base
 
+	CohortID uuid.UUID
+
 	Name string
 	RoomCode string
 	Capacity int
-
-	Users []u.User
-	Enrollments []e.Enrollment
 }
