@@ -13,6 +13,13 @@ type jwtProvider struct {
 	expiryDuration time.Duration
 }
 
+func NewJWTProvider(secret string, expiry time.Duration) *jwtProvider {
+	return &jwtProvider{
+		secretKey: []byte(secret),
+		expiryDuration: expiry,
+	}
+}
+
 type CustomClaims struct {
 	UserID         uuid.UUID `json:"user_id"`
 	OrganizationID uuid.UUID `json:"org_id"`
