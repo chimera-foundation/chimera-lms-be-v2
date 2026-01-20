@@ -8,11 +8,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type Auth interface {
-    Register(ctx context.Context, email, password, firstName, lastName string, orgID uuid.UUID) (*domain.User, error)
-    Login(ctx context.Context, email, password string) (string, error)
-}
-
 type authService struct {
     repo domain.UserRepository
 }
