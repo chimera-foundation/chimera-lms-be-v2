@@ -10,10 +10,14 @@ import (
 
 type authService struct {
     repo domain.UserRepository
+    tokenProvider TokenProvider
 }
 
-func NewAuthService(r domain.UserRepository) Auth {
-	return &authService{repo: r}
+func NewAuthService(r domain.UserRepository, tp TokenProvider) Auth {
+	return &authService{
+        repo: r,
+        tokenProvider: tp,
+    }
 }
 
 func (s *authService) Register(ctx context.Context, email, password, firstName, lastName string, orgID uuid.UUID) (*domain.User, error) {
@@ -53,7 +57,10 @@ func (s *authService) Login(ctx context.Context, email, password string) (string
 
     // 3. Logic for generating a JWT would go here.
     // Usually, you would inject a 'TokenProvider' interface into this struct.
-    token := "sample-jwt-token" 
+    token, err := s.tokenProvider.GenerateToken(user.ID, user.OrganizationID)
+    if err != nil{
+        return "", errors.New("failed to generate access token")
+    }
 
     return token, nil
 }
