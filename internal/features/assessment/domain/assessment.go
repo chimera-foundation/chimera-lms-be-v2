@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared"
-	sub "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/submission/domain"
+	"github.com/google/uuid"
 )
 
 type AssessmentType int
@@ -28,9 +28,10 @@ const (
 type Assessment struct {
 	shared.Base
 
+	OrganizationID uuid.UUID
+
 	Title string
 	Type AssessmentType
 	SubType AssessmentSubType
 	DueDate time.Time
-	Submissions []sub.Submission
 }
