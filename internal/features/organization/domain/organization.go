@@ -5,6 +5,7 @@ import (
 	ap "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/academic_period/domain"
 	p "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/program/domain"
 	c "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/course/domain"
+	co "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/cohort/domain"
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared"
 )
 
@@ -28,6 +29,7 @@ type Organization struct {
 	AcademicPeriods []ap.AcademicPeriod
 	Programs []p.Program
 	Courses []c.Course
+	Cohorts []co.Cohort
 
 	IsActive bool
 }
