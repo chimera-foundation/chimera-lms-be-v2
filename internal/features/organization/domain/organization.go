@@ -6,6 +6,7 @@ import (
 	p "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/program/domain"
 	c "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/course/domain"
 	co "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/cohort/domain"
+	e "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/education_level/domain"
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared"
 )
 
@@ -30,6 +31,7 @@ type Organization struct {
 	Programs []p.Program
 	Courses []c.Course
 	Cohorts []co.Cohort
+	EducationLevel []e.EducationLevel
 
 	IsActive bool
 }
