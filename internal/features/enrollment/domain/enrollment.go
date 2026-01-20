@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared"
+	sub "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/submission/domain"
 )
 
 type EnrollmentStatus int
@@ -19,4 +20,5 @@ type Enrollment struct {
 
 	Status EnrollmentStatus
 	EnrolledAt time.Time
+	Submissions []sub.Submission
 }
