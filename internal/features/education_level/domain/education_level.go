@@ -2,7 +2,8 @@ package domain
 
 import (
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared"
-	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/subject/domain"
+	s "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/subject/domain"
+	c "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/course/domain"
 )
 
 type EducationLevel struct {
@@ -10,5 +11,6 @@ type EducationLevel struct {
 	
 	Name string
 	Code string	
-	Subjects []domain.Subject
+	Subjects []s.Subject
+	Courses []c.Course
 }
