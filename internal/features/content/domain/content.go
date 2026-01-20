@@ -1,6 +1,9 @@
 package domain
 
-import "github.com/chimera-foundation/chimera-lms-be-v2/internal/shared"
+import (
+	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared"
+	prog "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/progress_tracker/domain"
+)
 
 type ContentType int
 
@@ -14,4 +17,5 @@ type Content struct {
 	shared.Base
 
 	Type ContentType
+	ProgressTrackers []prog.ProgressTracker
 }
