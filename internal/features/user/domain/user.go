@@ -2,6 +2,7 @@ package domain
 
 import (
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared"
+	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/course/domain"
 	"github.com/google/uuid"
 )
 
@@ -20,6 +21,7 @@ type User struct {
 	ExternalID string // NISN for schools, NIM for University
 	Metadata *UserMetadata
 	GuardianID *uuid.UUID
+	TeachingCourses *[]domain.Course
 
 	IsActive bool
 }
