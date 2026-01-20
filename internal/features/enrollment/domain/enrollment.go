@@ -4,8 +4,7 @@ import (
 	"time"
 
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared"
-	sub "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/submission/domain"
-	prog "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/progress_tracker/domain"
+	"github.com/google/uuid"
 )
 
 type EnrollmentStatus int
@@ -19,8 +18,11 @@ const (
 type Enrollment struct {
 	shared.Base
 
+	UserID uuid.UUID
+	CourseID uuid.UUID
+	SectionID uuid.UUID
+	AcademicPeriodID uuid.UUID
+
 	Status EnrollmentStatus
 	EnrolledAt time.Time
-	Submissions []sub.Submission
-	ProgressTrackers []prog.ProgressTracker
 }
