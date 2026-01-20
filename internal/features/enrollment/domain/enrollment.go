@@ -5,6 +5,7 @@ import (
 
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared"
 	sub "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/submission/domain"
+	prog "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/progress_tracker/domain"
 )
 
 type EnrollmentStatus int
@@ -21,4 +22,5 @@ type Enrollment struct {
 	Status EnrollmentStatus
 	EnrolledAt time.Time
 	Submissions []sub.Submission
+	ProgressTrackers []prog.ProgressTracker
 }
