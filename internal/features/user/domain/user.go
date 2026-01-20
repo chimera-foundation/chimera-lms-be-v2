@@ -3,6 +3,7 @@ package domain
 import (
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserMetadata struct {
@@ -31,4 +32,23 @@ func (u *User) IsChildOf(possibleGuardian User) bool {
 		return false
 	}
 	return *u.GuardianID == possibleGuardian.Base.ID
+}
+
+func (u *User) HashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(bytes), err
+}
+
+func (u *User) SetPassword(password string) error {
+    bytes, err := u.HashPassword(password)
+    if err != nil {
+        return err
+    }
+    u.PasswordHash = string(bytes)
+    return nil
+}
+
+func (u *User) CheckPassword(password string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
+	return err == nil
 }
