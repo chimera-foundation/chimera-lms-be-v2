@@ -2,14 +2,14 @@ package domain
 
 import (
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared"
-	l "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/lesson/domain"
+	"github.com/google/uuid"
 )
 
 type Module struct {
 	shared.Base
 
+	CourseID uuid.UUID
+
 	Title string
 	OrderIndex int
-
-	Lessons []l.Lesson
 }
