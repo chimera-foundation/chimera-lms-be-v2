@@ -3,6 +3,8 @@ package domain
 import (
 	u "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/domain"
 	ap "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/academic_period/domain"
+	p "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/program/domain"
+	c "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/course/domain"
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared"
 )
 
@@ -24,6 +26,8 @@ type Organization struct {
 	Address string `validate:"required,min=10,max=200"`
 	Users []u.User 
 	AcademicPeriods []ap.AcademicPeriod
+	Programs []p.Program
+	Courses []c.Course
 
 	IsActive bool
 }
