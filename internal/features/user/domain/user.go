@@ -5,6 +5,7 @@ import (
 	c "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/course/domain"
 	r "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/role/domain"
 	e "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/enrollment/domain"
+	sub "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/submission/domain"
 	"github.com/google/uuid"
 )
 
@@ -26,6 +27,7 @@ type User struct {
 	TeachingCourses *[]c.Course
 	Roles []r.Role
 	Enrollments []e.Enrollment
+	Submissions []sub.Submission
 
 	IsActive bool
 }
