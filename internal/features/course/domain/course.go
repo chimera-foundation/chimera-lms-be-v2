@@ -21,4 +21,6 @@ type Course struct {
 	Status CourseStatus	
 	Price int64 
 	Modules []m.Module
+	GradeLevel int
+	Credits int // for university
 }
