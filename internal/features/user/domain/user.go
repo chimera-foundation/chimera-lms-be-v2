@@ -4,6 +4,7 @@ import (
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared"
 	c "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/course/domain"
 	r "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/role/domain"
+	e "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/enrollment/domain"
 	"github.com/google/uuid"
 )
 
@@ -24,6 +25,7 @@ type User struct {
 	GuardianID *uuid.UUID
 	TeachingCourses *[]c.Course
 	Roles []r.Role
+	Enrollments []e.Enrollment
 
 	IsActive bool
 }

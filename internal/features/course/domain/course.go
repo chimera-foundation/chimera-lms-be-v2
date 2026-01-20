@@ -3,6 +3,7 @@ package domain
 import (
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared"
 	m "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/module/domain"
+	e "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/enrollment/domain"
 )
 
 type CourseStatus int
@@ -23,4 +24,5 @@ type Course struct {
 	Modules []m.Module
 	GradeLevel int
 	Credits int // for university
+	Enrollments []e.Enrollment
 }
