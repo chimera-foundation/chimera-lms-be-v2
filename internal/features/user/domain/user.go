@@ -15,8 +15,8 @@ type User struct {
 
 	Email string 
 	PasswordHash string
-	Username string
-	FullName string
+	FirstName string
+	LastName string
 	ExternalID string // NISN for schools, NIM for University
 	Metadata *UserMetadata
 	GuardianID *uuid.UUID
