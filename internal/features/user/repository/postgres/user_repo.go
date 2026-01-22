@@ -24,7 +24,7 @@ func (r *UserRepoPostgres) Create(ctx context.Context, user *domain.User) error 
 		VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
 	now := time.Now()
-	user.Base.PrepareCreate(&user.OrganizationID)
+	user.PrepareCreate(&user.OrganizationID)
 	_, err := r.db.ExecContext(ctx, query,
 		user.ID,
 		user.OrganizationID,
