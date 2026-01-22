@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/service"
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/delivery/dto"
+	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/service"
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 type UserHandler struct {
@@ -50,7 +51,7 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
         req.Password, 
         req.FirstName, 
         req.LastName, 
-        req.OrganizationID,
+        uuid.MustParse(req.OrganizationID),
     )
 
     if err != nil {
