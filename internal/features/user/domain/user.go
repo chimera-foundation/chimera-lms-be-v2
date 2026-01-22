@@ -25,6 +25,7 @@ type User struct {
 	Roles []Role
 
 	IsActive bool
+	IsSuperuser bool
 }
 
 func (u *User) IsChildOf(possibleGuardian User) bool {
