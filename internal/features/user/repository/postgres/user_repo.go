@@ -23,7 +23,6 @@ func (r *UserRepoPostgres) Create(ctx context.Context, user *domain.User) error 
 		INSERT INTO users (id, organization_id, email, password_hash, is_superuser, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
-	now := time.Now()
 	user.PrepareCreate(&user.OrganizationID)
 	_, err := r.db.ExecContext(ctx, query,
 		user.ID,
@@ -31,8 +30,8 @@ func (r *UserRepoPostgres) Create(ctx context.Context, user *domain.User) error 
 		user.Email,
 		user.PasswordHash,
 		user.IsSuperuser,
-		now,
-		now,
+		user.CreatedAt,
+		user.UpdatedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to insert user: %w", err)
