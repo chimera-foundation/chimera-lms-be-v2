@@ -47,7 +47,7 @@ func (h *UserHandler) Routes() chi.Router {
 	r := chi.NewRouter()
 	
 	r.Post("/register", h.Register)
-	r.Get("/login", h.Login)
+	r.Post("/login", h.Login)
 	
 	return r
 }
