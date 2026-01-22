@@ -11,5 +11,4 @@ type CRUD interface {
 	RegisterOrganization(ctx context.Context, name, slug, address string, isActive bool) (*domain.Organization, error)
 	DeleteOrganization(ctx context.Context, orgID uuid.UUID) (error) 
 	GetOrganization(ctx context.Context, orgID uuid.UUID) (*domain.Organization, error)
-	GetAllOrganizations(ctx context.Context)
 }
