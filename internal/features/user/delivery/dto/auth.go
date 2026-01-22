@@ -8,6 +8,12 @@ type RegisterRequest struct {
 	OrganizationID string `json:"organization_id"`
 }
 
+type RegisterResponse struct {
+	Email string
+	FirstName string
+	LastName string
+}
+
 type LoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`

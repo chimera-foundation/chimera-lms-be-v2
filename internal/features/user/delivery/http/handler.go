@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/delivery/dto"
+	sdto "github.com/chimera-foundation/chimera-lms-be-v2/internal/shared/dto"
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/service"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -18,14 +19,28 @@ func NewUserHandler(authService service.Auth) *UserHandler {
 	return &UserHandler{authService: authService}
 }
 
-func (h *UserHandler) respondWithError(w http.ResponseWriter, code int, message string) {
-    h.respondWithJSON(w, code, map[string]string{"error": message})
-}
+func (h *UserHandler) respondWithError(w http.ResponseWriter, code int, status string, message string) {
+    response := sdto.WebResponse{
+        Code:   code,
+        Status: status,
+        Errors: message,
+    }
 
-func (h *UserHandler) respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
     w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(code)
-    json.NewEncoder(w).Encode(payload)
+    json.NewEncoder(w).Encode(response)
+}
+
+func (h *UserHandler) respondWithJSON(w http.ResponseWriter, code int, status string, payload interface{}) {
+    response := sdto.WebResponse{
+        Code:   code,
+        Status: status,
+        Data:   payload,
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(code)
+    json.NewEncoder(w).Encode(response)
 }
 
 func (h *UserHandler) Routes() chi.Router {
@@ -41,7 +56,7 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	req := dto.RegisterRequest{}
 
     if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-        h.respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+        h.respondWithError(w, http.StatusBadRequest, "BAD_REQUEST", "Invalid request payload")
         return
     }
 
@@ -55,28 +70,33 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
     )
 
     if err != nil {
-        h.respondWithError(w, http.StatusInternalServerError, err.Error())
+        h.respondWithError(w, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error())
         return
     }
 
-    h.respondWithJSON(w, http.StatusCreated, user)
+    response := dto.RegisterResponse{
+        Email: user.Email,
+        FirstName: user.FirstName,
+        LastName: user.LastName,
+    }
+    h.respondWithJSON(w, http.StatusCreated, "CREATED", response)
 }
 
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
     req := dto.LoginRequest{}
 
     if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-        h.respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+        h.respondWithError(w, http.StatusBadRequest, "BAD_REQUEST", "Invalid request payload")
         return
     }
 
     token, err := h.authService.Login(r.Context(), req.Email, req.Password)
     if err != nil {
-        h.respondWithError(w, http.StatusUnauthorized, "Invalid email or password")
+        h.respondWithError(w, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error())
         return
     }
 
-    h.respondWithJSON(w, http.StatusOK, map[string]string{
+    h.respondWithJSON(w, http.StatusOK, "OK",map[string]string{
         "access_token": token,
         "token_type":   "Bearer",
     })
