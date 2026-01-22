@@ -60,13 +60,18 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+    orgID, err := uuid.Parse(req.OrganizationID)
+    if err != nil {
+        h.respondWithError(w, http.StatusInternalServerError,"INTERNAL_SERVER_ERROR", err.Error())
+        return
+    }
     user, err := h.authService.Register(
         r.Context(), 
         req.Email, 
         req.Password, 
         req.FirstName, 
         req.LastName, 
-        uuid.MustParse(req.OrganizationID),
+        orgID,
     )
 
     if err != nil {
