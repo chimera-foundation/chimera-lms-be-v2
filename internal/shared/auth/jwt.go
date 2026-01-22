@@ -41,7 +41,7 @@ func (j *jwtProvider) GenerateToken(userID uuid.UUID, orgID uuid.UUID) (string, 
 }
 
 func (j *jwtProvider) ValidateToken(tokenString string) (uuid.UUID, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(t *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(t *jwt.Token) (any, error) {
 		return j.secretKey, nil
 	})
 

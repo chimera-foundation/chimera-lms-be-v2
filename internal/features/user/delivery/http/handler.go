@@ -31,7 +31,7 @@ func (h *UserHandler) respondWithError(w http.ResponseWriter, code int, status s
     json.NewEncoder(w).Encode(response)
 }
 
-func (h *UserHandler) respondWithJSON(w http.ResponseWriter, code int, status string, payload interface{}) {
+func (h *UserHandler) respondWithJSON(w http.ResponseWriter, code int, status string, payload any) {
     response := sdto.WebResponse{
         Code:   code,
         Status: status,
