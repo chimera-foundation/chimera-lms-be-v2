@@ -23,7 +23,7 @@ CREATE TABLE "organizations" (
   "updated_at" timestamp WITH TIME ZONE DEFAULT (now()),
   "deleted_at" timestamp WITH TIME ZONE,
   "created_by" uuid,
-  "updated_by" uuid
+  "updated_by" uuid,
   "deleted_by" uuid
 );
 
@@ -37,7 +37,7 @@ CREATE TABLE "users" (
   "updated_at" timestamp WITH TIME ZONE DEFAULT (now()),
   "deleted_at" timestamp WITH TIME ZONE,
   "created_by" uuid,
-  "updated_by" uuid
+  "updated_by" uuid,
   "deleted_by" uuid
 );
 
@@ -53,7 +53,7 @@ CREATE TABLE "academic_periods" (
   "updated_at" timestamp WITH TIME ZONE DEFAULT (now()),
   "deleted_at" timestamp WITH TIME ZONE,
   "created_by" uuid,
-  "deleted_by" uuid
+  "deleted_by" uuid,
   "updated_by" uuid
 );
 
@@ -66,7 +66,7 @@ CREATE TABLE "education_levels" (
   "updated_at" timestamp WITH TIME ZONE DEFAULT (now()),
   "deleted_at" timestamp WITH TIME ZONE,
   "created_by" uuid,
-  "deleted_by" uuid
+  "deleted_by" uuid,
   "updated_by" uuid
 );
 
@@ -80,7 +80,7 @@ CREATE TABLE "subjects" (
   "updated_at" timestamp WITH TIME ZONE DEFAULT (now()),
   "deleted_at" timestamp WITH TIME ZONE,
   "created_by" uuid,
-  "deleted_by" uuid
+  "deleted_by" uuid,
   "updated_by" uuid
 );
 
@@ -93,7 +93,7 @@ CREATE TABLE "programs" (
   "updated_at" timestamp WITH TIME ZONE DEFAULT (now()),
   "deleted_at" timestamp WITH TIME ZONE,
   "created_by" uuid,
-  "deleted_by" uuid
+  "deleted_by" uuid,
   "updated_by" uuid
 );
 
@@ -113,7 +113,7 @@ CREATE TABLE "courses" (
   "updated_at" timestamp WITH TIME ZONE DEFAULT (now()),
   "deleted_at" timestamp WITH TIME ZONE,
   "created_by" uuid,
-  "deleted_by" uuid
+  "deleted_by" uuid,
   "updated_by" uuid
 );
 
@@ -126,7 +126,7 @@ CREATE TABLE "modules" (
   "updated_at" timestamp WITH TIME ZONE DEFAULT (now()),
   "deleted_at" timestamp WITH TIME ZONE,
   "created_by" uuid,
-  "deleted_by" uuid
+  "deleted_by" uuid,
   "updated_by" uuid
 );
 
@@ -139,7 +139,7 @@ CREATE TABLE "lessons" (
   "updated_at" timestamp WITH TIME ZONE DEFAULT (now()),
   "deleted_at" timestamp WITH TIME ZONE,
   "created_by" uuid,
-  "deleted_by" uuid
+  "deleted_by" uuid,
   "updated_by" uuid
 );
 
@@ -153,7 +153,7 @@ CREATE TABLE "assessments" (
   "updated_at" timestamp WITH TIME ZONE DEFAULT (now()),
   "deleted_at" timestamp WITH TIME ZONE,
   "created_by" uuid,
-  "deleted_by" uuid
+  "deleted_by" uuid,
   "updated_by" uuid
 );
 
@@ -167,7 +167,7 @@ CREATE TABLE "contents" (
   "updated_at" timestamp WITH TIME ZONE DEFAULT (now()),
   "deleted_at" timestamp WITH TIME ZONE,
   "created_by" uuid,
-  "deleted_by" uuid
+  "deleted_by" uuid,
   "updated_by" uuid
 );
 
@@ -179,7 +179,7 @@ CREATE TABLE "roles" (
   "updated_at" timestamp WITH TIME ZONE DEFAULT (now()),
   "deleted_at" timestamp WITH TIME ZONE,
   "created_by" uuid,
-  "deleted_by" uuid
+  "deleted_by" uuid,
   "updated_by" uuid
 );
 
@@ -193,7 +193,7 @@ CREATE TABLE "cohorts" (
   "updated_at" timestamp WITH TIME ZONE DEFAULT (now()),
   "deleted_at" timestamp WITH TIME ZONE,
   "created_by" uuid,
-  "deleted_by" uuid
+  "deleted_by" uuid,
   "updated_by" uuid
 );
 
@@ -207,7 +207,7 @@ CREATE TABLE "sections" (
   "updated_at" timestamp WITH TIME ZONE DEFAULT (now()),
   "deleted_at" timestamp WITH TIME ZONE,
   "created_by" uuid,
-  "deleted_by" uuid
+  "deleted_by" uuid,
   "updated_by" uuid
 );
 
@@ -223,7 +223,7 @@ CREATE TABLE "enrollments" (
   "updated_at" timestamp WITH TIME ZONE DEFAULT (now()),
   "deleted_at" timestamp WITH TIME ZONE,
   "created_by" uuid,
-  "deleted_by" uuid
+  "deleted_by" uuid,
   "updated_by" uuid
 );
 
@@ -238,7 +238,7 @@ CREATE TABLE "submissions" (
   "updated_at" timestamp WITH TIME ZONE DEFAULT (now()),
   "deleted_at" timestamp WITH TIME ZONE,
   "created_by" uuid,
-  "deleted_by" uuid
+  "deleted_by" uuid,
   "updated_by" uuid
 );
 
