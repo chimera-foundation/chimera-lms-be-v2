@@ -3,17 +3,19 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/domain"
+	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared/auth"
 	"github.com/google/uuid"
 )
 
 type authService struct {
     repo domain.UserRepository
-    tokenProvider TokenProvider
+    tokenProvider auth.TokenProvider
 }
 
-func NewAuthService(r domain.UserRepository, tp TokenProvider) Auth {
+func NewAuthService(r domain.UserRepository, tp auth.TokenProvider) Auth {
 	return &authService{
         repo: r,
         tokenProvider: tp,
@@ -55,12 +57,19 @@ func (s *authService) Login(ctx context.Context, email, password string) (string
         return "", errors.New("invalid email or password")
     }
 
-    // 3. Logic for generating a JWT would go here.
-    // Usually, you would inject a 'TokenProvider' interface into this struct.
     token, err := s.tokenProvider.GenerateToken(user.ID, user.OrganizationID)
     if err != nil{
         return "", errors.New("failed to generate access token")
     }
 
     return token, nil
+}
+
+func (s *authService) Logout(ctx context.Context, token string) (error) {
+    err := s.tokenProvider.BlacklistToken(ctx, token, 15 * time.Minute) 
+    if err != nil {
+        return errors.New("could not invalidate session")
+    }
+
+    return nil
 }

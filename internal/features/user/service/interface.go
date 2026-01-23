@@ -10,9 +10,5 @@ import (
 type Auth interface {
     Register(ctx context.Context, email, password, firstName, lastName string, orgID uuid.UUID) (*domain.User, error)
     Login(ctx context.Context, email, password string) (string, error)
-}
-
-type TokenProvider interface {
-	GenerateToken(userID uuid.UUID, orgID uuid.UUID) (string, error)
-	ValidateToken(token string) (uuid.UUID, error)
+	Logout(ctx context.Context, token string) (error)
 }
