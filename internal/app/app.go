@@ -2,8 +2,10 @@ package app
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
@@ -19,16 +21,24 @@ type BootstrapConfig struct {
 	Router *chi.Mux     
 	Log    *logrus.Logger
 	Config *viper.Viper
-	TokenProvider  auth.TokenProvider
+	Redis *redis.Client
 }
 
 func Bootstrap(config *BootstrapConfig) {
 	// 1. Setup Repositories
 	userRepo := postgres.NewUserRepo(config.DB)
-	// tokenService := auth.NewJWTProvider()
+
+	secret := config.Config.GetString("JWT_SECRET_KEY")
+	expiryMinutes := config.Config.GetInt("ACCESS_TOKEN_EXPIRE_MINUTES")
+	if expiryMinutes == 0 {
+		expiryMinutes = 60 
+	}
+	expiryDuration := time.Duration(expiryMinutes) * time.Minute
+	
+	tokenProvider := auth.NewJWTProvider(secret, expiryDuration, config.Redis)
 
 	// 2. Setup Services/UseCases
-	authService := service.NewAuthService(userRepo, config.TokenProvider) // nil is placeholder for TokenProvider
+	authService := service.NewAuthService(userRepo, tokenProvider) 
 
 	// 3. Setup Controllers/Handlers
 	userHandler := http.NewUserHandler(authService)
@@ -40,7 +50,7 @@ func Bootstrap(config *BootstrapConfig) {
         })
 
 		r.Group(func(r chi.Router) {
-            r.Use(middleware.AuthMiddleware(config.TokenProvider))
+            r.Use(middleware.AuthMiddleware(tokenProvider))
             
             r.Mount("/users", userHandler.ProtectedRoutes())
         })
