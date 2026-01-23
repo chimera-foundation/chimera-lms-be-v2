@@ -1,14 +1,15 @@
 package app
 
 import (
+	"context"
 	"database/sql"
 	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	
+
 	// Import the pgx driver for database/sql compatibility
-	_ "github.com/jackc/pgx/v5/stdlib" 
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func NewDatabase(v *viper.Viper, log *logrus.Logger) *sql.DB {
@@ -36,7 +37,7 @@ func NewDatabase(v *viper.Viper, log *logrus.Logger) *sql.DB {
 	db.SetMaxOpenConns(maxConn)
 	db.SetConnMaxLifetime(time.Duration(maxLifetime) * time.Second)
 
-	if err := db.Ping(); err != nil {
+	if err := db.PingContext(context.Background()); err != nil {
 		log.Fatalf("failed to ping database: %v", err)
 	}
 
