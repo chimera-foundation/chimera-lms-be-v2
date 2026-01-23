@@ -16,6 +16,8 @@ func main() {
 
 	log := app.NewLogger(v)
 
+	redis := app.NewRedis(v, log)
+
 	db := app.NewDatabase(v, log)
 	defer db.Close() 
 
@@ -26,7 +28,7 @@ func main() {
 	}
 	expiryDuration := time.Duration(expiryMinutes) * time.Minute
 	
-	tokenProvider := auth.NewJWTProvider(secret, expiryDuration)
+	tokenProvider := auth.NewJWTProvider(secret, expiryDuration, redis)
 
 	r := chi.NewRouter()
 
