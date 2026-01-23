@@ -8,8 +8,6 @@ import (
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared/auth"
 )
 
-type contextKey string
-const UserIDKey contextKey = "userID"
 
 func AuthMiddleware(tokenProvider auth.TokenProvider) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -33,7 +31,7 @@ func AuthMiddleware(tokenProvider auth.TokenProvider) func(http.Handler) http.Ha
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), UserIDKey, userID)
+			ctx := context.WithValue(r.Context(), auth.UserIDKey, userID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
