@@ -44,11 +44,18 @@ func (h *UserHandler) respondWithJSON(w http.ResponseWriter, code int, status st
     json.NewEncoder(w).Encode(response)
 }
 
-func (h *UserHandler) Routes() chi.Router {
+func (h *UserHandler) PublicRoutes() chi.Router {
 	r := chi.NewRouter()
 	
 	r.Post("/register", h.Register)
 	r.Post("/login", h.Login)
+	
+	return r
+}
+
+func (h *UserHandler) ProtectedRoutes() chi.Router {
+	r := chi.NewRouter()
+	
     r.Post("/logout", h.Logout)
 	
 	return r
