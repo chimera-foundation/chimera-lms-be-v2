@@ -10,6 +10,8 @@ import (
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/delivery/http"
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/repository/postgres"
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/service"
+	"github.com/chimera-foundation/chimera-lms-be-v2/internal/middleware"
+	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared/auth"
 )
 
 type BootstrapConfig struct {
@@ -17,7 +19,7 @@ type BootstrapConfig struct {
 	Router *chi.Mux     
 	Log    *logrus.Logger
 	Config *viper.Viper
-	TokenProvider  service.TokenProvider
+	TokenProvider  auth.TokenProvider
 }
 
 func Bootstrap(config *BootstrapConfig) {
@@ -33,6 +35,14 @@ func Bootstrap(config *BootstrapConfig) {
 
 	// 4. Setup Routes (Standard library way)
 	config.Router.Route("/api/v1", func(r chi.Router) {
-		r.Mount("/users", userHandler.Routes())
+		r.Group(func(r chi.Router) {
+            r.Mount("/auth", userHandler.PublicRoutes()) 
+        })
+
+		r.Group(func(r chi.Router) {
+            r.Use(middleware.AuthMiddleware(config.TokenProvider))
+            
+            r.Mount("/users", userHandler.ProtectedRoutes())
+        })
 	})
 }
