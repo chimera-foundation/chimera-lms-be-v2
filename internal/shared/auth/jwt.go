@@ -1,9 +1,11 @@
 package auth
 
 import (
-	"time"
+	"context"
 	"errors"
+	"time"
 
+	redis "github.com/redis/go-redis/v9"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
@@ -11,12 +13,14 @@ import (
 type jwtProvider struct {
 	secretKey []byte
 	expiryDuration time.Duration
+	redis *redis.Client
 }
 
-func NewJWTProvider(secret string, expiry time.Duration) *jwtProvider {
+func NewJWTProvider(secret string, expiry time.Duration, redisClient *redis.Client) TokenProvider {
 	return &jwtProvider{
 		secretKey: []byte(secret),
 		expiryDuration: expiry,
+		redis: redisClient,
 	}
 }
 
@@ -55,4 +59,15 @@ func (j *jwtProvider) ValidateToken(tokenString string) (uuid.UUID, error) {
 	}
 
 	return claims.UserID, nil
+}
+
+func (j *jwtProvider) BlacklistToken(ctx context.Context, token string, expiration time.Duration) error {
+    key := "blacklist:" + token
+    return j.redis.Set(ctx, key, "true", expiration).Err()
+}
+
+func (j *jwtProvider) IsBlacklisted(ctx context.Context, token string) (bool, error) {
+    key := "blacklist:" + token
+    exists, err := j.redis.Exists(ctx, key).Result()
+    return exists > 0, err
 }
