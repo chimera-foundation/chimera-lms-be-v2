@@ -3,10 +3,11 @@ package http
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/delivery/dto"
-	sdto "github.com/chimera-foundation/chimera-lms-be-v2/internal/shared/dto"
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/service"
+	sdto "github.com/chimera-foundation/chimera-lms-be-v2/internal/shared/dto"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
@@ -48,6 +49,7 @@ func (h *UserHandler) Routes() chi.Router {
 	
 	r.Post("/register", h.Register)
 	r.Post("/login", h.Login)
+    r.Post("/logout", h.Logout)
 	
 	return r
 }
@@ -104,5 +106,20 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
     h.respondWithJSON(w, http.StatusOK, "OK",map[string]string{
         "access_token": token,
         "token_type":   "Bearer",
+    })
+}
+
+func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
+    authHeader := r.Header.Get("Authorization")
+    tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+    err := h.authService.Logout(r.Context(), tokenString)
+    if err != nil {
+        h.respondWithError(w, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", "Failed to logout")
+        return
+    }
+
+    h.respondWithJSON(w, http.StatusOK, "OK", map[string]string{
+        "message": "Successfully logged out",
     })
 }
