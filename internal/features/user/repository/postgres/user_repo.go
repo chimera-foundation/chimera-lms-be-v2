@@ -41,7 +41,7 @@ func (r *UserRepoPostgres) Create(ctx context.Context, user *domain.User) error 
 
 func (r *UserRepoPostgres) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	query := `
-		SELECT id, organization_id, email, password_hash, is_superuser, created_at, updated_at
+		SELECT id, organization_id, email, password_hash, is_superuser, created_at, updated_at, first_name, last_name
 		FROM users 
 		WHERE email = $1 AND deleted_at IS NULL`
 
@@ -54,6 +54,8 @@ func (r *UserRepoPostgres) GetByEmail(ctx context.Context, email string) (*domai
 		&user.IsSuperuser,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.FirstName,
+		&user.LastName,
 	)
 
 	if err == sql.ErrNoRows {
@@ -67,7 +69,7 @@ func (r *UserRepoPostgres) GetByEmail(ctx context.Context, email string) (*domai
 
 func (r *UserRepoPostgres) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
 	query := `
-		SELECT id, organization_id, email, password_hash, is_superuser, created_at, updated_at
+		SELECT id, organization_id, email, password_hash, is_superuser, created_at, updated_at, first_name, last_name
 		FROM users 
 		WHERE id = $1 AND deleted_at IS NULL`
 
@@ -80,6 +82,8 @@ func (r *UserRepoPostgres) GetByID(ctx context.Context, id uuid.UUID) (*domain.U
 		&user.IsSuperuser,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.FirstName,
+		&user.LastName,
 	)
 
 	if err == sql.ErrNoRows {
