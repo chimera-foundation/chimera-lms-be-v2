@@ -10,6 +10,9 @@ import (
 type EventFilter struct {
     OrganizationID uuid.UUID
     
+    Limit  int // How many to fetch
+    Offset int // How many to skip
+    
     // Scoping (The "Who")
     UserID    *uuid.UUID
     SectionID *uuid.UUID

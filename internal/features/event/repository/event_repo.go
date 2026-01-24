@@ -118,7 +118,9 @@ func (r *EventRepoPostgres) Find(ctx context.Context, f domain.EventFilter) ([]*
 		      (scope = 'cohort' AND cohort_id = $5)
 		  )
 		  AND (event_type = ANY($6) OR $7 = 0)
-		  AND (start_at <= $8 AND (end_at >= $9 OR end_at IS NULL))`
+		  AND (start_at <= $8 AND (end_at >= $9 OR end_at IS NULL))
+		ORDER BY start_at ASC, title ASC 
+		LIMIT $10 OFFSET $11`
 
 	// Handle the any-type logic
 	typeCount := len(f.Types)
