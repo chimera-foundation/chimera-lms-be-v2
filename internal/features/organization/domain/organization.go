@@ -4,13 +4,13 @@ import (
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared"
 )
 
-type OrgType int
+type OrgType string
 
 const (
-	University OrgType = iota
-	HighSchool
-	MiddleSchool
-	GradeSchool
+	University OrgType = "university"
+	HighSchool OrgType = "high_school"
+	MiddleSchool OrgType = "middle_school"
+	GradeSchool OrgType = "grade_school"
 )
 
 type Organization struct {

@@ -7,12 +7,12 @@ import (
 	"github.com/google/uuid"
 )
 
-type EnrollmentStatus int
+type EnrollmentStatus string
 
 const (	
-	Active EnrollmentStatus = iota
-	Completed
-	Dropped
+	Active EnrollmentStatus = "active"
+	Completed EnrollmentStatus = "completed"
+	Dropped EnrollmentStatus = "dropped"
 )
 
 type Enrollment struct {

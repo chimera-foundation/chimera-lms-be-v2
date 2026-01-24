@@ -5,12 +5,12 @@ import (
 	"github.com/google/uuid"
 )
 
-type CourseStatus int
+type CourseStatus string
 
 const (
-	Draft CourseStatus = iota
-	Published
-	Archived
+	Draft CourseStatus = "draft"
+	Published CourseStatus = "published"
+	Archived CourseStatus = "archived"
 )
 
 type Course struct {

@@ -5,12 +5,12 @@ import (
 	"github.com/google/uuid"
 )
 
-type ContentType int
+type ContentType string
 
 const (
-	Video ContentType = iota
-	Document
-	Quiz
+	Video ContentType = "video"
+	Document ContentType = "document"
+	Quiz ContentType = "quiz"
 )
 
 type Content struct {

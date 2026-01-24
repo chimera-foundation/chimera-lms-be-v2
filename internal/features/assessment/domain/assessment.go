@@ -7,22 +7,22 @@ import (
 	"github.com/google/uuid"
 )
 
-type AssessmentType int
-type AssessmentSubType int
+type AssessmentType string
+type AssessmentSubType string
 
 const (
-	Assignment AssessmentType = iota
-	Exam
+	Assignment AssessmentType = "assignment"
+	Exam AssessmentType = "exam"
 )
 
 const (
-	Exercise AssessmentSubType = iota
-	Homework
-	Quiz
-	AssessmentExam
-	MidtermExam
-	PracticalExam
-	FinalExam
+	Exercise AssessmentSubType = "exercise"
+	Homework AssessmentSubType = "homework"
+	Quiz AssessmentSubType = "quiz"
+	AssessmentExam AssessmentSubType = "assessment_exam"
+	MidtermExam AssessmentSubType = "midterm_exam"
+	PracticalExam AssessmentSubType = "practical_exam"
+	FinalExam AssessmentSubType = "final_exam"
 )
 
 type Assessment struct {

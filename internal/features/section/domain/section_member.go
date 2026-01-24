@@ -6,13 +6,13 @@ import (
 )
 
 
-type SectionRoleType int
+type SectionRoleType string
 
 const (
-	Student SectionRoleType = iota
-	Teacher
-	Assistant
-	Monitor
+	Student SectionRoleType = "student"
+	Teacher SectionRoleType = "teacher"
+	Assistant SectionRoleType = "assistant"
+	Monitor SectionRoleType = "monitor"
 )
 
 type SectionMember struct {
