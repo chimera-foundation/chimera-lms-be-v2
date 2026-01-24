@@ -18,6 +18,7 @@ const (
 	Vanilla  EventType = "vanilla"
 	Meeting  EventType = "meeting"
 	Schedule EventType = "schedule"
+	Announcement EventType = "announcement"
 )
 
 type EventScope string

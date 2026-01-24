@@ -1,6 +1,6 @@
 -- 1. Create Custom Types for Enums
 CREATE TYPE event_type AS ENUM (
-    'holiday', 'deadline', 'session', 'vanilla', 'meeting', 'schedule'
+    'holiday', 'deadline', 'session', 'vanilla', 'meeting', 'schedule', 'announcement'
 );
 
 CREATE TYPE event_scope AS ENUM (
