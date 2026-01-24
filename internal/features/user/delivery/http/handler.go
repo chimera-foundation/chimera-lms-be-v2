@@ -57,6 +57,7 @@ func (h *UserHandler) ProtectedRoutes() chi.Router {
 	r := chi.NewRouter()
 	
     r.Post("/logout", h.Logout)
+    r.Get("/me", h.Me)
 	
 	return r
 }
@@ -129,4 +130,22 @@ func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
     h.respondWithJSON(w, http.StatusOK, "OK", map[string]string{
         "message": "Successfully logged out",
     })
+}
+
+func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request) {
+    authHeader := r.Header.Get("Authorization")
+    tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+    user, err := h.authService.Me(r.Context(), tokenString)
+    if err != nil {
+        h.respondWithError(w, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", "Failed to fetch user information")
+        return
+    }
+
+    response := dto.MeResponse{
+        Email: user.Email,
+        FirstName: user.FirstName,
+        LastName: user.LastName,
+    }
+    h.respondWithJSON(w, http.StatusOK, "OK", response)
 }
