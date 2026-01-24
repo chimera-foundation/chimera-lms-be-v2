@@ -84,8 +84,6 @@ func (r OrganizationRepoPostgres) Delete(ctx context.Context, orgID uuid.UUID) e
 }
 
 func (r *OrganizationRepoPostgres) GetIDByUserID(ctx context.Context, userID uuid.UUID) (uuid.UUID, error) {
-    // We query the 'users' table because it holds the foreign key 
-    // to the organization according to your schema.
     query := `
         SELECT organization_id 
         FROM users 
