@@ -13,7 +13,25 @@ import (
 )
 
 type UserHandler struct {
-	authService service.Auth
+    authService service.Auth
+}
+
+func (h *UserHandler) PublicRoutes() chi.Router {
+    r := chi.NewRouter()
+    
+    r.Post("/register", h.Register)
+    r.Post("/login", h.Login)
+    
+    return r
+}
+
+func (h *UserHandler) ProtectedRoutes() chi.Router {
+    r := chi.NewRouter()
+    
+    r.Post("/logout", h.Logout)
+    r.Get("/me", h.Me)
+    
+    return r
 }
 
 func NewUserHandler(authService service.Auth) *UserHandler {
@@ -42,24 +60,6 @@ func (h *UserHandler) respondWithJSON(w http.ResponseWriter, code int, status st
     w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(code)
     json.NewEncoder(w).Encode(response)
-}
-
-func (h *UserHandler) PublicRoutes() chi.Router {
-	r := chi.NewRouter()
-	
-	r.Post("/register", h.Register)
-	r.Post("/login", h.Login)
-	
-	return r
-}
-
-func (h *UserHandler) ProtectedRoutes() chi.Router {
-	r := chi.NewRouter()
-	
-    r.Post("/logout", h.Logout)
-    r.Get("/me", h.Me)
-	
-	return r
 }
 
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
