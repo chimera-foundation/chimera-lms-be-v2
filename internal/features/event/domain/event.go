@@ -151,6 +151,11 @@ func (e *Event) Validate() error {
 		if e.StartAt == nil {
 			return errors.New("deadline events must have a start_at (due date)")
 		}
+	
+	case Announcement:
+		if e.ImageURL != nil && *e.ImageURL == "" {
+			return errors.New("announcement image URL cannot be empty if provided")
+		}
 	}
 
 	switch e.Scope {
