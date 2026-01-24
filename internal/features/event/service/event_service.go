@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	c "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/cohort/domain"
@@ -11,6 +13,7 @@ import (
 	o "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/organization/domain"
 	s "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/section/domain"
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 )
 
 type eventService struct {
@@ -19,6 +22,7 @@ type eventService struct {
 	enrollmentRepo en.EnrollmentRepository
 	cohortRepo     c.CohortRepository
 	sectionRepo    s.SectionRepository // for staff/teachers
+	redis *redis.Client
 }
 
 func NewEventService(
@@ -27,6 +31,7 @@ func NewEventService(
 	enrollmentRepo en.EnrollmentRepository,
 	cohortRepo     c.CohortRepository,
 	sectionRepo    s.SectionRepository,
+	redis *redis.Client,
 ) EventService {
 	return &eventService{
 		repo:           repo,
@@ -34,6 +39,7 @@ func NewEventService(
 		enrollmentRepo: enrollmentRepo,
 		cohortRepo:     cohortRepo,
 		sectionRepo:    sectionRepo,
+		redis: redis,
 	}
 }
 
@@ -54,6 +60,16 @@ func (s *eventService) CreateEvent(ctx context.Context, e *e.Event) (*e.Event, e
 }
 
 func (s *eventService) GetCalendarForUser(ctx context.Context, userID uuid.UUID, start, end time.Time) ([]*e.Event, error) {
+	cacheKey := fmt.Sprintf("events:cal:%s:%d:%d", userID, start.Unix(), end.Unix())
+
+	val, err := s.redis.Get(ctx, cacheKey).Result()
+    if err == nil {
+        var cachedEvents []*e.Event
+        if err := json.Unmarshal([]byte(val), &cachedEvents); err == nil {
+            return cachedEvents, nil
+        }
+    }
+
 	orgID, err := s.orgRepo.GetIDByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -86,7 +102,17 @@ func (s *eventService) GetCalendarForUser(ctx context.Context, userID uuid.UUID,
 		EndTime:        end,
 	}
 
-	return s.repo.Find(ctx, filter)
+	events, err := s.repo.Find(ctx, filter)
+    if err != nil {
+        return nil, err
+    }
+
+    go func() {
+        data, _ := json.Marshal(events)
+        s.redis.Set(context.Background(), cacheKey, data, 15*time.Minute)
+    }()
+
+	return events, nil
 }
 
 func (s *eventService) GetSectionSchedule(ctx context.Context, sectionID uuid.UUID, start, end time.Time) ([]*e.Event, error) {
