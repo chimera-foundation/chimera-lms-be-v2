@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/organization/domain"
@@ -80,4 +81,25 @@ func (r OrganizationRepoPostgres) Delete(ctx context.Context, orgID uuid.UUID) e
 	}
 
 	return nil
+}
+
+func (r *OrganizationRepoPostgres) GetIDByUserID(ctx context.Context, userID uuid.UUID) (uuid.UUID, error) {
+    // We query the 'users' table because it holds the foreign key 
+    // to the organization according to your schema.
+    query := `
+        SELECT organization_id 
+        FROM users 
+        WHERE id = $1 AND deleted_at IS NULL`
+    
+    var orgID uuid.UUID
+    err := r.db.QueryRowContext(ctx, query, userID).Scan(&orgID)
+
+    if err != nil {
+        if err == sql.ErrNoRows {
+            return uuid.Nil, errors.New("organization not found for this user")
+        }
+        return uuid.Nil, err
+    }
+
+    return orgID, nil
 }
