@@ -28,6 +28,18 @@ type User struct {
 	IsSuperuser bool
 }
 
+func NewUser(email, firstName, lastName string, orgID uuid.UUID) *User {
+    return &User{
+        Email:          email,
+        FirstName:      firstName,
+        LastName:       lastName,
+        OrganizationID: orgID,
+        IsActive:       true, 
+        IsSuperuser:    false, 
+        Metadata:       &UserMetadata{}, 
+    }
+}
+
 func (u *User) IsChildOf(possibleGuardian User) bool {
 	if u.GuardianID == nil {
 		return false

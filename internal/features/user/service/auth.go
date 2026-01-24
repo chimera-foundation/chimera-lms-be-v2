@@ -28,13 +28,12 @@ func (s *authService) Register(ctx context.Context, email, password, firstName, 
         return nil, errors.New("user with this email already exists")
     }
 
-    user := &domain.User{
-        Email: email,
-        FirstName: firstName,
-        LastName: lastName,
-        OrganizationID: orgID,
-        IsActive: true,
-    }
+    user := domain.NewUser(
+        email,
+        firstName,
+        lastName,
+        orgID,
+    )
 
     if err := user.SetPassword(password); err != nil {
         return nil, err
