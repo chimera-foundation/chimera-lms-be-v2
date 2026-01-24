@@ -130,6 +130,13 @@ func NewEvent(orgID uuid.UUID, title string, eventType EventType, opts ...EventO
 	return e
 }
 
+func NewAnnouncement(orgID uuid.UUID, title, body string, scope EventScope, opts ...EventOption) *Event {
+    e := NewEvent(orgID, title, Announcement, opts...)
+    e.Description = body
+    e.Scope = scope
+    return e
+}
+
 func (e *Event) Validate() error {
 	if e.OrganizationID == uuid.Nil {
 		return errors.New("organization_id is required")
