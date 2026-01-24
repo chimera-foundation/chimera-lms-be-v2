@@ -20,7 +20,7 @@ func NewUserRepo(db *sql.DB) domain.UserRepository {
 
 func (r *UserRepoPostgres) Create(ctx context.Context, user *domain.User) error {
 	query := `
-		INSERT INTO users (id, organization_id, email, password_hash, is_superuser, created_at, updated_at)
+		INSERT INTO users (id, organization_id, email, password_hash, is_superuser, created_at, updated_at, first_name, last_name)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
 	user.PrepareCreate(&user.OrganizationID)
@@ -32,6 +32,8 @@ func (r *UserRepoPostgres) Create(ctx context.Context, user *domain.User) error 
 		user.IsSuperuser,
 		user.CreatedAt,
 		user.UpdatedAt,
+		user.FirstName,
+		user.LastName,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to insert user: %w", err)
