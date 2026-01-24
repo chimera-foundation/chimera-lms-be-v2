@@ -103,6 +103,8 @@ func (r *UserRepoPostgres) Update(ctx context.Context, user *domain.User) error 
 		SET organization_id = $2, email = $3, password_hash = $4, is_superuser = $5, updated_at = $6
 		WHERE id = $1 AND deleted_at IS NULL`
 
+	user.UpdatedAt = time.Now()
+	user.UpdatedBy = &user.ID
 	res, err := r.db.ExecContext(ctx, query,
 		user.ID,
 		user.OrganizationID,
