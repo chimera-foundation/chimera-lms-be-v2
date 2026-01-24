@@ -114,8 +114,8 @@ func (r *EventRepoPostgres) Find(ctx context.Context, f domain.EventFilter) ([]*
 		  AND (
 		      (scope = 'global' AND $2 = true) OR
 		      (scope = 'personal' AND user_id = $3) OR
-		      (scope = 'section' AND section_id = $4) OR
-		      (scope = 'cohort' AND cohort_id = $5)
+		      (scope = 'section' AND section_id = ANY($4)) OR
+		      (scope = 'cohort' AND cohort_id = ANY($5))
 		  )
 		  AND (event_type = ANY($6) OR $7 = 0)
 		  AND (start_at <= $8 AND (end_at >= $9 OR end_at IS NULL))
@@ -125,9 +125,13 @@ func (r *EventRepoPostgres) Find(ctx context.Context, f domain.EventFilter) ([]*
 	// Handle the any-type logic
 	typeCount := len(f.Types)
 
+	if f.Limit == 0 {
+		f.Limit = 50 
+	}
+
 	rows, err := r.db.QueryContext(ctx, query,
-		f.OrganizationID, f.IncludeGlobal, f.UserID, f.SectionID, f.CohortID,
-		pq.Array(f.Types), typeCount, f.EndTime, f.StartTime,
+		f.OrganizationID, f.IncludeGlobal, f.UserID, pq.Array(f.SectionIDs), pq.Array(f.CohortIDs),
+		pq.Array(f.Types), typeCount, f.EndTime, f.StartTime, f.Limit, f.Offset,
 	)
 	if err != nil {
 		return nil, err

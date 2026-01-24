@@ -15,8 +15,8 @@ type EventFilter struct {
     
     // Scoping (The "Who")
     UserID    *uuid.UUID
-    SectionID *uuid.UUID
-    CohortID  *uuid.UUID
+    SectionIDs []uuid.UUID  // Changed from *uuid.UUID (Classroom scope)
+    CohortIDs  []uuid.UUID  // Changed from *uuid.UUID (Year Group scope)
     IncludeGlobal bool
 
     // Categories (The "What")
