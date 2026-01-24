@@ -10,21 +10,21 @@ import (
 type EventType string
 
 const (
-	Holiday EventType = "holiday"
+	Holiday  EventType = "holiday"
 	Deadline EventType = "deadline"
-	Session EventType = "session"
-	Vanilla EventType = "vanilla"
-	Meeting EventType = "meeting"
+	Session  EventType = "session"
+	Vanilla  EventType = "vanilla"
+	Meeting  EventType = "meeting"
 	Schedule EventType = "schedule"
 )
 
 type EventScope string
 
 const (
-    ScopeGlobal   EventScope = "global"
-    ScopeCohort   EventScope = "cohort"
-    ScopeSection  EventScope = "section"
-    ScopePersonal EventScope = "personal"
+	ScopeGlobal   EventScope = "global"
+	ScopeCohort   EventScope = "cohort"
+	ScopeSection  EventScope = "section"
+	ScopePersonal EventScope = "personal"
 )
 
 type Event struct {
@@ -32,23 +32,23 @@ type Event struct {
 
 	OrganizationID uuid.UUID
 
-	Title string
+	Title       string
 	Description string
-	Location string
-	EventType EventType
+	Location    string
+	EventType   EventType
 
 	Color string //hex format
 
-	StartAt *time.Time
-	EndAt *time.Time
-	IsAllDay bool
+	StartAt        *time.Time
+	EndAt          *time.Time
+	IsAllDay       bool
 	RecurrenceRule *string
 
-	Scope EventScope
-	CohortID *uuid.UUID
+	Scope     EventScope
+	CohortID  *uuid.UUID
 	SectionID *uuid.UUID
-	UserID *uuid.UUID
+	UserID    *uuid.UUID
 
-	SourceID *uuid.UUID
+	SourceID   *uuid.UUID
 	SourceType *string
 }
