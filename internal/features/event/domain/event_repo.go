@@ -27,7 +27,7 @@ type EventFilter struct {
 type EventRepository interface {
 	Create(ctx context.Context, event *Event) error
 	Update(ctx context.Context, event *Event) error
-	Delete(ctx context.Context, event_id uuid.UUID) error
+	Delete(ctx context.Context, id uuid.UUID) error
 	GetByID(ctx context.Context, id uuid.UUID) (*Event, error)
     Find(ctx context.Context, filter EventFilter) ([]*Event, error)
 }
