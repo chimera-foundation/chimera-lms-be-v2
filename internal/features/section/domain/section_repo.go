@@ -5,6 +5,6 @@ import (
     "github.com/google/uuid"
 )
 
-type SectionMemberRepository interface {
+type SectionRepository interface {
     GetSectionIDsByUserID(ctx context.Context, userID uuid.UUID) ([]uuid.UUID, error)
 }
