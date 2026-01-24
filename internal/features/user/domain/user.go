@@ -7,7 +7,7 @@ import (
 )
 
 type UserMetadata struct {
-	Address string `json:"address"`
+	Address   string `json:"address"`
 	BloodType string `json:"blood_type"`
 }
 
@@ -16,28 +16,28 @@ type User struct {
 
 	OrganizationID uuid.UUID
 
-	Email string 
+	Email        string
 	PasswordHash string
-	FirstName string
-	LastName string
-	Metadata *UserMetadata
-	GuardianID *uuid.UUID
-	Roles []Role
+	FirstName    string
+	LastName     string
+	Metadata     *UserMetadata
+	GuardianID   *uuid.UUID
+	Roles        []Role
 
-	IsActive bool
+	IsActive    bool
 	IsSuperuser bool
 }
 
 func NewUser(email, firstName, lastName string, orgID uuid.UUID) *User {
-    return &User{
-        Email:          email,
-        FirstName:      firstName,
-        LastName:       lastName,
-        OrganizationID: orgID,
-        IsActive:       true, 
-        IsSuperuser:    false, 
-        Metadata:       &UserMetadata{}, 
-    }
+	return &User{
+		Email:          email,
+		FirstName:      firstName,
+		LastName:       lastName,
+		OrganizationID: orgID,
+		IsActive:       true,
+		IsSuperuser:    false,
+		Metadata:       &UserMetadata{},
+	}
 }
 
 func (u *User) IsChildOf(possibleGuardian User) bool {
@@ -53,12 +53,12 @@ func (u *User) HashPassword(password string) (string, error) {
 }
 
 func (u *User) SetPassword(password string) error {
-    bytes, err := u.HashPassword(password)
-    if err != nil {
-        return err
-    }
-    u.PasswordHash = string(bytes)
-    return nil
+	bytes, err := u.HashPassword(password)
+	if err != nil {
+		return err
+	}
+	u.PasswordHash = string(bytes)
+	return nil
 }
 
 func (u *User) CheckPassword(password string) bool {
