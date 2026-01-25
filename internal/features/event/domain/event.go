@@ -134,6 +134,10 @@ func NewAnnouncement(orgID uuid.UUID, title, body string, scope EventScope, opts
     e := NewEvent(orgID, title, Announcement, opts...)
     e.Description = body
     e.Scope = scope
+
+	for _, opt := range opts {
+		opt(e)
+	}
     return e
 }
 
