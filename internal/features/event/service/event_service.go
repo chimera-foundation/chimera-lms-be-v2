@@ -107,10 +107,10 @@ func (s *eventService) GetCalendarForUser(ctx context.Context, userID uuid.UUID,
         return nil, err
     }
 
-    go func() {
-        data, _ := json.Marshal(events)
+    go func(evs []*e.Event) {
+        data, _ := json.Marshal(evs)
         s.redis.Set(context.Background(), cacheKey, data, 15*time.Minute)
-    }()
+    }(events)
 
 	return events, nil
 }
@@ -169,6 +169,14 @@ func (s *eventService) GetEvents(ctx context.Context, orgID uuid.UUID, limit, of
     return s.repo.Find(ctx, filter)
 }
 
+func (s *eventService) flushUserCache(ctx context.Context, userID uuid.UUID) {
+	pattern := fmt.Sprintf("events:cal:%s:*", userID)
+	iter := s.redis.Scan(ctx, 0, pattern, 0).Iterator()
+	for iter.Next(ctx) {
+		s.redis.Del(ctx, iter.Val())
+	}
+}
+
 func (s *eventService) UpdateEvent(ctx context.Context, e *e.Event) (*e.Event, error) {
     if err := e.Validate(); err != nil {
         return nil, err
@@ -185,8 +193,9 @@ func (s *eventService) UpdateEvent(ctx context.Context, e *e.Event) (*e.Event, e
         return nil, errors.New("unauthorized: organization mismatch")
     }
 
-    if err := s.repo.Update(ctx, e); err != nil {
-        return nil, err
+	err = s.repo.Update(ctx, e) 
+	if err == nil && e.UserID != nil {
+        s.flushUserCache(ctx, *e.UserID)
     }
 
     return e, nil
