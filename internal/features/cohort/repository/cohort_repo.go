@@ -19,6 +19,30 @@ func NewCohortRepository(db *sql.DB) domain.CohortRepository {
 	}
 }
 
+func (r *CohortRepositoryPostgres) Create(ctx context.Context, cohort *domain.Cohort) error {
+	query := `
+		INSERT INTO cohorts (id, organization_id, academic_period_id, education_level_id, name, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)`
+
+	cohort.PrepareCreate(nil)
+
+	_, err := r.db.ExecContext(ctx, query,
+		cohort.ID,
+		cohort.OrganizationID,
+		cohort.AcademicPeriodID,
+		cohort.EducationLevelID,
+		cohort.Name,
+		cohort.CreatedAt,
+		cohort.UpdatedAt,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to create cohort: %w", err)
+	}
+
+	return nil
+}
+
 func (r *CohortRepositoryPostgres) GetIDsByUserID(ctx context.Context, userID uuid.UUID) ([]uuid.UUID, error) {
 	query := `
 			SELECT cohort_id FROM cohort_members
