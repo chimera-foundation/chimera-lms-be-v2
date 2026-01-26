@@ -18,7 +18,7 @@ func NewOrganizationRepo(db *sql.DB) domain.OrganizationRepository{
 	return &OrganizationRepoPostgres{db: db}
 }
 
-func (r OrganizationRepoPostgres) Create(ctx context.Context, org *domain.Organization) error {
+func (r *OrganizationRepoPostgres) Create(ctx context.Context, org *domain.Organization) error {
 	query := `
 		INSERT INTO organizations (id, name, slug, type, created_at, updated_at)
 		VALUE ($1, $2, $3, $4, $5, $6)`
@@ -37,7 +37,33 @@ func (r OrganizationRepoPostgres) Create(ctx context.Context, org *domain.Organi
 	return nil
 }
 
-func (r OrganizationRepoPostgres) Update(ctx context.Context, org *domain.Organization) error {
+func (r *OrganizationRepoPostgres) GetByID(ctx context.Context, id uuid.UUID) (*domain.Organization, error) {
+	query := `
+			SELECT id, name, slug, type, created_at, updated_at, is_system_org
+			WHERE if `
+
+	organization := &domain.Organization{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&organization.ID,
+		&organization.Name,
+		&organization.Slug,
+		&organization.Type,
+		&organization.CreatedAt,
+		&organization.UpdatedAt,
+		&organization.IsSystemOrg,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get organization by id: %w", err)
+	}
+
+	return organization, nil
+}
+
+func (r *OrganizationRepoPostgres) Update(ctx context.Context, org *domain.Organization) error {
 	query := `
 		UPDATE organizations
 		SET name=$2, slug=$3, type=$4, created_at=$5, updated_at=$6
@@ -64,7 +90,7 @@ func (r OrganizationRepoPostgres) Update(ctx context.Context, org *domain.Organi
 	return nil
 }
 
-func (r OrganizationRepoPostgres) Delete(ctx context.Context, orgID uuid.UUID) error {
+func (r *OrganizationRepoPostgres) Delete(ctx context.Context, orgID uuid.UUID) error {
 	query := `
 		DELETE FROM organizations
 		WHERE id=$1`
