@@ -14,17 +14,40 @@ type SectionRepositoryPostgres struct {
 }
 
 func NewSectionRepository(db *sql.DB) domain.SectionRepository {
-	return & SectionRepositoryPostgres {
+	return &SectionRepositoryPostgres{
 		db: db,
 	}
+}
+
+func (r *SectionRepositoryPostgres) Create(ctx context.Context, section *domain.Section) error {
+	query := `
+		INSERT INTO sections (id, cohort_id, name, room_number, capacity, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)`
+
+	section.PrepareCreate(nil)
+
+	_, err := r.db.ExecContext(ctx, query,
+		section.ID,
+		section.CohortID,
+		section.Name,
+		section.RoomCode,
+		section.Capacity,
+		section.CreatedAt,
+		section.UpdatedAt,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to create section: %w", err)
+	}
+
+	return nil
 }
 
 func (r *SectionRepositoryPostgres) GetSectionIDsByUserID(ctx context.Context, userID uuid.UUID) ([]uuid.UUID, error) {
 	query := `
 			SELECT section_id FROM section_members
 			WHERE user_id = $1`
-	
-	
+
 	rows, err := r.db.QueryContext(ctx, query, userID)
 	if err != nil {
 		return nil, err
