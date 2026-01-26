@@ -21,7 +21,7 @@ func NewUserRepo(db *sql.DB) domain.UserRepository {
 func (r *UserRepoPostgres) Create(ctx context.Context, user *domain.User) error {
 	query := `
 		INSERT INTO users (id, organization_id, email, password_hash, is_superuser, created_at, updated_at, first_name, last_name)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)`
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 
 	user.PrepareCreate(&user.OrganizationID)
 	_, err := r.db.ExecContext(ctx, query,
@@ -61,7 +61,7 @@ func (r *UserRepoPostgres) GetByEmail(ctx context.Context, email string) (*domai
 	)
 
 	if err == sql.ErrNoRows {
-		return nil, nil 
+		return nil, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user by email: %w", err)
