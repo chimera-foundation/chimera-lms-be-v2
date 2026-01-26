@@ -11,5 +11,6 @@ type OrganizationRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*Organization, error)
 	Update(ctx context.Context, org *Organization) error
 	Delete(ctx context.Context, orgID uuid.UUID) error
+	GetBySlug(ctx context.Context, slug string) (*Organization, error)
 	GetIDByUserID(ctx context.Context, userID uuid.UUID) (uuid.UUID, error)
 }

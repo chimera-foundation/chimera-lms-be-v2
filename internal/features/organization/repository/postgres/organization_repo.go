@@ -14,16 +14,16 @@ type OrganizationRepoPostgres struct {
 	db *sql.DB
 }
 
-func NewOrganizationRepo(db *sql.DB) domain.OrganizationRepository{
+func NewOrganizationRepo(db *sql.DB) domain.OrganizationRepository {
 	return &OrganizationRepoPostgres{db: db}
 }
 
 func (r *OrganizationRepoPostgres) Create(ctx context.Context, org *domain.Organization) error {
 	query := `
 		INSERT INTO organizations (id, name, slug, type, created_at, updated_at)
-		VALUE ($1, $2, $3, $4, $5, $6)`
+		VALUES ($1, $2, $3, $4, $5, $6)`
 	org.PrepareCreate(nil)
-	_, err := r.db.ExecContext(ctx, query, 
+	_, err := r.db.ExecContext(ctx, query,
 		org.ID,
 		org.Name,
 		org.Slug,
@@ -75,7 +75,7 @@ func (r *OrganizationRepoPostgres) Update(ctx context.Context, org *domain.Organ
 		org.Slug,
 		org.Type,
 		org.CreatedAt,
-		org.UpdatedAt,	
+		org.UpdatedAt,
 	)
 
 	if err != nil {
@@ -109,21 +109,48 @@ func (r *OrganizationRepoPostgres) Delete(ctx context.Context, orgID uuid.UUID) 
 	return nil
 }
 
+func (r *OrganizationRepoPostgres) GetBySlug(ctx context.Context, slug string) (*domain.Organization, error) {
+	query := `
+		SELECT id, name, slug, type, created_at, updated_at, is_system_org
+		FROM organizations
+		WHERE slug = $1 AND deleted_at IS NULL`
+
+	organization := &domain.Organization{}
+	err := r.db.QueryRowContext(ctx, query, slug).Scan(
+		&organization.ID,
+		&organization.Name,
+		&organization.Slug,
+		&organization.Type,
+		&organization.CreatedAt,
+		&organization.UpdatedAt,
+		&organization.IsSystemOrg,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get organization by slug: %w", err)
+	}
+
+	return organization, nil
+}
+
 func (r *OrganizationRepoPostgres) GetIDByUserID(ctx context.Context, userID uuid.UUID) (uuid.UUID, error) {
-    query := `
+	query := `
         SELECT organization_id 
         FROM users 
         WHERE id = $1 AND deleted_at IS NULL`
-    
-    var orgID uuid.UUID
-    err := r.db.QueryRowContext(ctx, query, userID).Scan(&orgID)
 
-    if err != nil {
-        if err == sql.ErrNoRows {
-            return uuid.Nil, errors.New("organization not found for this user")
-        }
-        return uuid.Nil, err
-    }
+	var orgID uuid.UUID
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(&orgID)
 
-    return orgID, nil
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return uuid.Nil, errors.New("organization not found for this user")
+		}
+		return uuid.Nil, err
+	}
+
+	return orgID, nil
 }
