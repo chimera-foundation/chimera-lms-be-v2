@@ -23,4 +23,5 @@ type Organization struct {
 	AcademicPeriods []AcademicPeriod
 
 	IsActive bool
+	IsSystemOrg *bool
 }

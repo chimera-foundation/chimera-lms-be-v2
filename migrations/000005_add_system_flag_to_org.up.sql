@@ -1,0 +1,1 @@
+ALTER TABLE "organizations" ADD COLUMN "is_system_org" BOOLEAN DEFAULT false;
