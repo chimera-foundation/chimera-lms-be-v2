@@ -9,5 +9,5 @@ type CohortMember struct {
 	shared.Base
 
 	CohortID uuid.UUID
-	UserID uuid.UUID
+	UserID   uuid.UUID
 }
