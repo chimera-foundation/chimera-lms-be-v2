@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/domain"
+	"github.com/google/uuid"
 )
 
 type RoleRepoPostgres struct {
@@ -59,4 +60,15 @@ func (r *RoleRepoPostgres) GetByName(ctx context.Context, name string) (*domain.
 	}
 
 	return role, nil
+}
+
+func (r *RoleRepoPostgres) AssignRoleToUser(ctx context.Context, userID, roleID uuid.UUID) error {
+	query := `INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`
+
+	_, err := r.db.ExecContext(ctx, query, userID, roleID)
+	if err != nil {
+		return fmt.Errorf("failed to assign role to user: %w", err)
+	}
+
+	return nil
 }
