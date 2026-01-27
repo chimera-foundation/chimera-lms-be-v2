@@ -38,4 +38,13 @@ DROP TYPE IF EXISTS organization_type;
 
 -- 6. Optional: Drop Extensions
 -- Only include this if the extension wasn't already in your DB before this migration
--- DROP EXTENSION IF EXISTS "pgcrypto";
+DROP EXTENSION IF EXISTS "pgcrypto";
+
+-- 7. DROP ENUMS
+DROP TYPE IF EXISTS organization_type;
+DROP TYPE IF EXISTS course_status;
+DROP TYPE IF EXISTS content_type;
+DROP TYPE IF EXISTS enrollment_status;
+DROP TYPE IF EXISTS assessment_sub_type;
+DROP TYPE IF EXISTS assessment_type;
+DROP TYPE IF EXISTS role_type;

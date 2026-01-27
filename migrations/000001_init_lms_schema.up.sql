@@ -2,11 +2,12 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 DO $$ BEGIN
-    CREATE TYPE organization_type AS ENUM ('school', 'university', 'corporate', 'bootcamp');
+    CREATE TYPE organization_type AS ENUM ('high_school', 'university', 'middle_school', 'grade_school');
     CREATE TYPE course_status AS ENUM ('draft', 'published', 'archived');
     CREATE TYPE content_type AS ENUM ('video', 'document', 'quiz', 'assignment');
     CREATE TYPE enrollment_status AS ENUM ('active', 'completed', 'dropped', 'pending');
-    CREATE TYPE assessment_type AS ENUM ('quiz', 'exam', 'project');
+    CREATE TYPE assessment_sub_type AS ENUM ('exercise', 'homework', 'quiz', 'assessment_exam', 'midterm_exam', 'practical_exam', 'final_exam');
+    CREATE TYPE assessment_type AS ENUM ('assignment', 'exam');
     CREATE TYPE role_type AS ENUM ('student', 'teacher', 'admin');
 EXCEPTION
     WHEN duplicate_object THEN null;
@@ -148,6 +149,7 @@ CREATE TABLE "assessments" (
   "organization_id" uuid,
   "title" varchar NOT NULL,
   "assessment_type" assessment_type,
+  "assessment_sub_type" assessment_sub_type,
   "due_date" timestamp WITH TIME ZONE,
   "created_at" timestamp WITH TIME ZONE DEFAULT (now()),
   "updated_at" timestamp WITH TIME ZONE DEFAULT (now()),
