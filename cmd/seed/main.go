@@ -93,19 +93,6 @@ func main() {
 }
 
 func (s *Seeder) Seed(ctx context.Context) error {
-	// Patch DB Enums to match Domain
-	events := []string{
-		"ALTER TYPE organization_type ADD VALUE IF NOT EXISTS 'high_school'",
-		"ALTER TYPE organization_type ADD VALUE IF NOT EXISTS 'middle_school'",
-		"ALTER TYPE organization_type ADD VALUE IF NOT EXISTS 'grade_school'",
-	}
-	for _, q := range events {
-		_, err := s.db.ExecContext(ctx, q)
-		if err != nil {
-			// Ignore error if it's not supported or fails, worst case insert fails again
-			fmt.Printf("Notice: Enum patch attempt: %v\n", err)
-		}
-	}
 
 	if err := s.seedOrganization(ctx); err != nil {
 		return err
