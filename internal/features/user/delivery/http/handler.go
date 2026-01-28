@@ -7,7 +7,7 @@ import (
 
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/delivery/dto"
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/service"
-	sdto "github.com/chimera-foundation/chimera-lms-be-v2/internal/shared/dto"
+	u "github.com/chimera-foundation/chimera-lms-be-v2/internal/shared/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
@@ -38,41 +38,17 @@ func NewUserHandler(authService service.Auth) *UserHandler {
 	return &UserHandler{authService: authService}
 }
 
-func (h *UserHandler) respondWithError(w http.ResponseWriter, code int, status string, message string) {
-    response := sdto.WebResponse{
-        Code:   code,
-        Status: status,
-        Errors: message,
-    }
-
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(code)
-    json.NewEncoder(w).Encode(response)
-}
-
-func (h *UserHandler) respondWithJSON(w http.ResponseWriter, code int, status string, payload any) {
-    response := sdto.WebResponse{
-        Code:   code,
-        Status: status,
-        Data:   payload,
-    }
-
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(code)
-    json.NewEncoder(w).Encode(response)
-}
-
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	req := dto.RegisterRequest{}
 
     if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-        h.respondWithError(w, http.StatusBadRequest, "BAD_REQUEST", "Invalid request payload")
+        u.BadRequest(w, "Invalid request payload")
         return
     }
 
     orgID, err := uuid.Parse(req.OrganizationID)
     if err != nil {
-        h.respondWithError(w, http.StatusInternalServerError,"INTERNAL_SERVER_ERROR", err.Error())
+        u.InternalServerError(w, err.Error())
         return
     }
     user, err := h.authService.Register(
@@ -85,7 +61,7 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
     )
 
     if err != nil {
-        h.respondWithError(w, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error())
+        u.InternalServerError(w, err.Error())
         return
     }
 
@@ -94,24 +70,25 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
         FirstName: user.FirstName,
         LastName: user.LastName,
     }
-    h.respondWithJSON(w, http.StatusCreated, "CREATED", response)
+
+    u.Created(w, response)
 }
 
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
     req := dto.LoginRequest{}
 
     if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-        h.respondWithError(w, http.StatusBadRequest, "BAD_REQUEST", "Invalid request payload")
+        u.BadRequest(w, "Invalid request payload")
         return
     }
 
     token, err := h.authService.Login(r.Context(), req.Email, req.Password)
     if err != nil {
-        h.respondWithError(w, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error())
+        u.InternalServerError(w, err.Error())
         return
     }
 
-    h.respondWithJSON(w, http.StatusOK, "OK",map[string]string{
+    u.OK(w, map[string]string{
         "access_token": token,
         "token_type":   "Bearer",
     })
@@ -123,11 +100,11 @@ func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
     err := h.authService.Logout(r.Context(), tokenString)
     if err != nil {
-        h.respondWithError(w, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", "Failed to logout")
+        u.InternalServerError(w, "Failed to logout")
         return
     }
 
-    h.respondWithJSON(w, http.StatusOK, "OK", map[string]string{
+    u.OK(w, map[string]string{
         "message": "Successfully logged out",
     })
 }
@@ -138,7 +115,7 @@ func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request) {
 
     user, err := h.authService.Me(r.Context(), tokenString)
     if err != nil {
-        h.respondWithError(w, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", "Failed to fetch user information")
+        u.InternalServerError(w, "Failed to fetch user information")
         return
     }
 
@@ -147,5 +124,5 @@ func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request) {
         FirstName: user.FirstName,
         LastName: user.LastName,
     }
-    h.respondWithJSON(w, http.StatusOK, "OK", response)
+    u.OK(w, response)
 }
