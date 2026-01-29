@@ -20,21 +20,20 @@ type User struct {
 	PasswordHash string
 	FirstName    string
 	LastName     string
-	Metadata     *UserMetadata
-	GuardianID   *uuid.UUID
+	Metadata     *UserMetadata // TODO: add to migration
+	GuardianID   *uuid.UUID // TODO: add to migration
 	Roles        []Role
 
-	IsActive    bool
 	IsSuperuser bool
 }
 
-func NewUser(email, firstName, lastName string, orgID uuid.UUID) *User {
+func NewUser(email, firstName, lastName string, orgID uuid.UUID, roles []Role) *User {
 	return &User{
 		Email:          email,
 		FirstName:      firstName,
 		LastName:       lastName,
 		OrganizationID: orgID,
-		IsActive:       true,
+		Roles: 			roles,
 		IsSuperuser:    false,
 		Metadata:       &UserMetadata{},
 	}
@@ -75,4 +74,17 @@ func (u *User) HasAnyRole(roleNames ...string) bool {
         }
     }
     return false
+}
+
+func (u *User) RolesStr() []string {
+    if len(u.Roles) == 0 {
+        return nil
+    }
+
+    roles := make([]string, len(u.Roles))
+    for i := range u.Roles {
+        roles[i] = u.Roles[i].Name
+    }
+
+    return roles
 }
