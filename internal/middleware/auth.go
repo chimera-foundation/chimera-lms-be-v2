@@ -19,7 +19,7 @@ func AuthMiddleware(tokenProvider auth.TokenProvider) func(http.Handler) http.Ha
 			}
 
 			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-			userID, err := tokenProvider.ValidateToken(tokenString)
+			claims, err := tokenProvider.ValidateToken(tokenString)
 			if err != nil {
 				http.Error(w, "Invalid token", http.StatusUnauthorized)
 				return
@@ -30,8 +30,9 @@ func AuthMiddleware(tokenProvider auth.TokenProvider) func(http.Handler) http.Ha
 				http.Error(w, "Token has been revoked", http.StatusUnauthorized)
 				return
 			}
-
-			ctx := context.WithValue(r.Context(), auth.UserIDKey, userID)
+			
+			ctx := context.WithValue(r.Context(), auth.UserIDKey, claims.UserID)
+			ctx = context.WithValue(ctx, auth.OrgIDKey, claims.OrganizationID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
