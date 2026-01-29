@@ -19,7 +19,7 @@ type UserHandler struct {
 func (h *UserHandler) PublicRoutes() chi.Router {
     r := chi.NewRouter()
     
-    r.Post("/register", h.Register)
+    r.Post("/register/student", h.Register)
     r.Post("/login", h.Login)
     
     return r
@@ -51,7 +51,7 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
         u.InternalServerError(w, err.Error())
         return
     }
-    user, err := h.authService.Register(
+    user, err := h.authService.RegisterStudent(
         r.Context(), 
         req.Email, 
         req.Password, 
@@ -123,6 +123,7 @@ func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request) {
         Email: user.Email,
         FirstName: user.FirstName,
         LastName: user.LastName,
+        Roles: user.RolesStr(),
     }
     u.OK(w, response)
 }
