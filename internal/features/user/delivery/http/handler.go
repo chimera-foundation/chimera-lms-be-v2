@@ -110,10 +110,7 @@ func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request) {
-    authHeader := r.Header.Get("Authorization")
-    tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-
-    user, err := h.authService.Me(r.Context(), tokenString)
+    user, err := h.authService.Me(r.Context())
     if err != nil {
         u.InternalServerError(w, "Failed to fetch user information")
         return
