@@ -3,11 +3,12 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
-	redis "github.com/redis/go-redis/v9"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	redis "github.com/redis/go-redis/v9"
 )
 
 type jwtProvider struct {
@@ -44,21 +45,28 @@ func (j *jwtProvider) GenerateToken(userID uuid.UUID, orgID uuid.UUID) (string, 
 	return token.SignedString(j.secretKey)
 }
 
-func (j *jwtProvider) ValidateToken(tokenString string) (uuid.UUID, error) {
+func (j *jwtProvider) ValidateToken(tokenString string) (*CustomClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(t *jwt.Token) (any, error) {
-		return j.secretKey, nil
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+            return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+        }
+        return j.secretKey, nil
 	})
 
-	if err != nil || !token.Valid {
-		return uuid.Nil, errors.New("invalid token")
-	}
+	if err != nil {
+        return nil, fmt.Errorf("token parsing failed: %w", err)
+    }
+
+    if !token.Valid {
+        return nil, errors.New("invalid token")
+    }
 
 	claims, ok := token.Claims.(*CustomClaims)
 	if !ok {
-		return uuid.Nil, errors.New("invalid claims")
+		return nil, errors.New("invalid claims")
 	}
 
-	return claims.UserID, nil
+	return claims, nil
 }
 
 func (j *jwtProvider) BlacklistToken(ctx context.Context, token string, expiration time.Duration) error {

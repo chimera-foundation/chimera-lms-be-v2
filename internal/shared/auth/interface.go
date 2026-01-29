@@ -9,7 +9,7 @@ import (
 
 type TokenProvider interface {
 	GenerateToken(userID uuid.UUID, orgID uuid.UUID) (string, error)
-	ValidateToken(token string) (uuid.UUID, error)
+	ValidateToken(token string) (*CustomClaims, error)
 	BlacklistToken(ctx context.Context, token string, expiration time.Duration) error
     IsBlacklisted(ctx context.Context, token string) (bool, error)
 }
