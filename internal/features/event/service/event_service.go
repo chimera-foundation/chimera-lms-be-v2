@@ -12,6 +12,7 @@ import (
 	e "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/event/domain"
 	o "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/organization/domain"
 	s "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/section/domain"
+	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared/auth"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
@@ -50,6 +51,8 @@ func (s *eventService) CreateEvent(ctx context.Context, e *e.Event) (*e.Event, e
 
 	// 2. Security/Context check: Ensure the Org exists
 	// (TODO: verify the creator has permission for this Org)
+    // If the event is for a section, verify the creator IS the teacher of that section.
+    // If it's global, verify they are an Org Admin.
 	
 	err := s.repo.Create(ctx, e)
 	if err != nil {
@@ -60,8 +63,7 @@ func (s *eventService) CreateEvent(ctx context.Context, e *e.Event) (*e.Event, e
 }
 
 func (s *eventService) GetCalendarForUser(ctx context.Context, userID uuid.UUID, start, end time.Time) ([]*e.Event, error) {
-	cacheKey := fmt.Sprintf("events:cal:%s:%d:%d", userID, start.Unix(), end.Unix())
-
+	cacheKey := fmt.Sprintf("v1:events:%s:%d:%d", userID, start.Unix(), end.Unix())
 	val, err := s.redis.Get(ctx, cacheKey).Result()
     if err == nil {
         var cachedEvents []*e.Event
@@ -70,9 +72,9 @@ func (s *eventService) GetCalendarForUser(ctx context.Context, userID uuid.UUID,
         }
     }
 
-	orgID, err := s.orgRepo.GetIDByUserID(ctx, userID)
-	if err != nil {
-		return nil, err
+	orgID, ok := auth.GetOrgID(ctx)
+	if !ok {
+		return nil, errors.New("organization id not found")
 	}
 	
 	activeEnrollments, _ := s.enrollmentRepo.GetActiveSectionIDsByUserID(ctx, userID)
@@ -102,6 +104,10 @@ func (s *eventService) GetCalendarForUser(ctx context.Context, userID uuid.UUID,
 		EndTime:        end,
 	}
 
+	if end.Sub(start) > 365*24*time.Hour {
+        return nil, errors.New("range too large")
+    }
+
 	events, err := s.repo.Find(ctx, filter)
     if err != nil {
         return nil, err
@@ -116,22 +122,13 @@ func (s *eventService) GetCalendarForUser(ctx context.Context, userID uuid.UUID,
 }
 
 func (s *eventService) GetSectionSchedule(ctx context.Context, sectionID uuid.UUID, start, end time.Time) ([]*e.Event, error) {
-    // 1. Get the Section to find its parent Cohort
-    section, err := s.sectionRepo.GetByID(ctx, sectionID)
-    if err != nil {
-        return nil, err
-    }
+    orgID, ok := auth.GetOrgID(ctx)
+	if !ok {
+		return nil, errors.New("failed at getting organization id")
+	}
 
-    // 2. Get the Cohort to find the OrganizationID
-    // Your schema confirms cohorts table has organization_id
-    cohort, err := s.cohortRepo.GetByID(ctx, section.CohortID)
-    if err != nil {
-        return nil, err
-    }
-
-    // 3. Now we have the OrganizationID required by the EventFilter
     filter := e.EventFilter{
-        OrganizationID: cohort.OrganizationID,
+        OrganizationID: orgID,
         SectionIDs:     []uuid.UUID{sectionID},
         IncludeGlobal:  false,
         StartTime:      start,
