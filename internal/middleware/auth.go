@@ -19,15 +19,15 @@ func AuthMiddleware(tokenProvider auth.TokenProvider) func(http.Handler) http.Ha
 			}
 
 			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-			blacklisted, err := tokenProvider.IsBlacklisted(r.Context(), tokenString)
-			if err != nil || blacklisted {
-				http.Error(w, "Token has been revoked", http.StatusUnauthorized)
-				return
-			}
-			
 			userID, err := tokenProvider.ValidateToken(tokenString)
 			if err != nil {
 				http.Error(w, "Invalid token", http.StatusUnauthorized)
+				return
+			}
+			
+			blacklisted, err := tokenProvider.IsBlacklisted(r.Context(), tokenString)
+			if err != nil || blacklisted {
+				http.Error(w, "Token has been revoked", http.StatusUnauthorized)
 				return
 			}
 
