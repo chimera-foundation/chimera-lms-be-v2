@@ -88,3 +88,16 @@ func (u *User) RolesStr() []string {
 
     return roles
 }
+
+func (u *User) CanPerform(resource, action string) bool {
+    if u.IsSuperuser {
+        return true
+    }
+
+    for _, role := range u.Roles {
+        if role.HasPermission(resource, action) {
+            return true
+        }
+    }
+    return false
+}
