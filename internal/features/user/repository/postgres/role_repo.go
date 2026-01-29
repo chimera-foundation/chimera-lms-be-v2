@@ -20,14 +20,19 @@ func NewRoleRepository(db *sql.DB) domain.RoleRepository {
 
 func (r *RoleRepoPostgres) Create(ctx context.Context, role *domain.Role) error {
 	query := `
-		INSERT INTO roles (id, name, created_at, updated_at)
-		VALUES ($1, $2, $3, $4)`
+		INSERT INTO roles (id, name, permissions, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5)`
 
+	permsJSON, err := json.Marshal(role.Permissions)
+	if err != nil {
+        return fmt.Errorf("failed to marshal permissions: %w", err)
+    }
 	role.PrepareCreate(nil)
 
-	_, err := r.db.ExecContext(ctx, query,
+	_, err = r.db.ExecContext(ctx, query,
 		role.ID,
 		role.Name,
+		permsJSON,
 		role.CreatedAt,
 		role.UpdatedAt,
 	)
