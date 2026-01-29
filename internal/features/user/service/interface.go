@@ -8,7 +8,7 @@ import (
 )
 
 type Auth interface {
-    Register(ctx context.Context, email, password, firstName, lastName string, orgID uuid.UUID) (*domain.User, error)
+    RegisterStudent(ctx context.Context, email, password, firstName, lastName string, orgID uuid.UUID) (*domain.User, error)
     Login(ctx context.Context, email, password string) (string, error)
 	Logout(ctx context.Context, token string) (error)
 	Me(ctx context.Context, token string) (*domain.User, error)
