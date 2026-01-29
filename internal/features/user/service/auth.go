@@ -82,10 +82,11 @@ func (s *authService) Logout(ctx context.Context, token string) (error) {
     return nil
 }
 
-func (s *authService) Me(ctx context.Context, token string) (*domain.User, error) {
-    user_id, err := s.tokenProvider.ValidateToken(token)
-    if err != nil {
-        return nil, errors.New("invalid token")
+func (s *authService) Me(ctx context.Context) (*domain.User, error) {
+    user_id, ok := auth.GetUserID(ctx)
+    fmt.Println(user_id)
+    if !ok {
+        return nil, errors.New("failed getting user id")
     }
 
     user, err := s.userRepo.GetByID(ctx, user_id)
