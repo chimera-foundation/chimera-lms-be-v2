@@ -25,22 +25,16 @@ func NewAuthService(ur domain.UserRepository, rr domain.RoleRepository, tp auth.
     }
 }
 
-func (s *authService) RegisterStudent(ctx context.Context, email, password, firstName, lastName string, orgID uuid.UUID) (*domain.User, error) {
-    studentRole, err := s.roleRepo.GetByName(ctx, "student")
+func (s *authService) register(ctx context.Context, email, password, firstName, lastName string, orgID uuid.UUID, roleName string) (*domain.User, error) {
+    role, err := s.roleRepo.GetByName(ctx, roleName)
     if err != nil {
-        return nil, fmt.Errorf("system error: roles not configured")
+        return nil, fmt.Errorf("system error: %w", err)
     }
-    if studentRole == nil {
-        return nil, errors.New("registration failed: student role does not exist")
+    if role == nil {
+        return nil, fmt.Errorf("registration failed: role '%s' does not exist", roleName)
     }
 
-    user := domain.NewUser(
-        email, 
-        firstName, 
-        lastName, 
-        orgID, 
-        []domain.Role{*studentRole},
-    )
+    user := domain.NewUser(email, firstName, lastName, orgID, []domain.Role{*role})
 
     if err := user.SetPassword(password); err != nil {
         return nil, err
@@ -51,6 +45,18 @@ func (s *authService) RegisterStudent(ctx context.Context, email, password, firs
     }
 
     return user, nil
+}
+
+func (s *authService) RegisterStudent(ctx context.Context, email, password, firstName, lastName string, orgID uuid.UUID) (*domain.User, error) {
+    return s.register(ctx, email, password, firstName, lastName, orgID, "student")
+}
+
+func (s *authService) RegisterTeacher(ctx context.Context, email, password, firstName, lastName string, orgID uuid.UUID) (*domain.User, error) {
+    return s.register(ctx, email, password, firstName, lastName, orgID, "teacher")
+}
+
+func (s *authService) RegisterAdmin(ctx context.Context, email, password, firstName, lastName string, orgID uuid.UUID) (*domain.User, error) {
+    return s.register(ctx, email, password, firstName, lastName, orgID, "admin")
 }
 
 func (s *authService) Login(ctx context.Context, email, password string) (string, error) {
