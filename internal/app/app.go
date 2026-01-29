@@ -27,6 +27,7 @@ type BootstrapConfig struct {
 func Bootstrap(config *BootstrapConfig) {
 	// 1. Setup Repositories
 	userRepo := postgres.NewUserRepo(config.DB)
+	roleRepo := postgres.NewRoleRepository(config.DB)
 
 	secret := config.Config.GetString("JWT_SECRET_KEY")
 	expiryMinutes := config.Config.GetInt("ACCESS_TOKEN_EXPIRE_MINUTES")
@@ -38,7 +39,7 @@ func Bootstrap(config *BootstrapConfig) {
 	tokenProvider := auth.NewJWTProvider(secret, expiryDuration, config.Redis)
 
 	// 2. Setup Services/UseCases
-	authService := service.NewAuthService(userRepo, tokenProvider) 
+	authService := service.NewAuthService(userRepo, roleRepo,tokenProvider) 
 
 	// 3. Setup Controllers/Handlers
 	userHandler := http.NewUserHandler(authService)
