@@ -33,17 +33,17 @@ func (s *OrganizationSeeder) SeedOrganizations(ctx context.Context) error {
 		"cts",
 		org_type,
 		"Mars, Planet ke Gaktau",
-		[]domain.AcademicPeriod{*mock_period},
+		nil,
 	)
 
 	organization.PrepareCreate(nil)
 
-	err := s.apr.Create(ctx, mock_period, organization.ID)
+	err := s.or.Create(ctx, organization)
 	if err != nil {
 		return err
 	}
 
-	err = s.or.Create(ctx, organization)
+	err = s.apr.Create(ctx, mock_period, organization.ID)
 	if err != nil {
 		return err
 	}
