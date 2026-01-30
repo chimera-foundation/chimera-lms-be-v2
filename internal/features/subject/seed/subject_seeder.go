@@ -19,10 +19,10 @@ func NewSubjectSeeder(r domain.SubjectRepository) *SubjectSeeder {
 	}
 }
 
-func (s *SubjectSeeder) SeedSubjects(ctx context.Context, educationLevelID uuid.UUID) error {
+func (s *SubjectSeeder) SeedSubjects(ctx context.Context, educationLevelID uuid.UUID) ([]*domain.Subject, error) {
 	orgID, ok := auth.GetOrgID(ctx)
 	if !ok {
-		return errors.New("Organization not found")
+		return nil, errors.New("Organization not found")
 	}
 
 	subjects := []*domain.Subject{
@@ -43,9 +43,9 @@ func (s *SubjectSeeder) SeedSubjects(ctx context.Context, educationLevelID uuid.
 	for _, subject := range subjects {
 		err := s.r.Create(ctx, subject)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return subjects, nil
 }
