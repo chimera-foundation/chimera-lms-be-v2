@@ -16,12 +16,12 @@ func NewRoleSeeder(rr domain.RoleRepository) *RoleSeeder {
 	}
 }
 
-func (s *RoleSeeder) SeedRoles(ctx context.Context) error {
+func (s *RoleSeeder) SeedRoles(ctx context.Context) ([]*domain.Role, error) {
 	roles := []*domain.Role{
 		{
 			Name: "superadmin",
 			Permissions: map[string][]string{
-				"all": {"manage"}, 
+				"all": {"manage"},
 			},
 		},
 		{
@@ -37,7 +37,7 @@ func (s *RoleSeeder) SeedRoles(ctx context.Context) error {
 		{
 			Name: "teacher",
 			Permissions: map[string][]string{
-				"course": {"create", "read", "update", "delete"},
+				"course":  {"create", "read", "update", "delete"},
 				"content": {"upload", "organize"},
 				"student": {"grade", "view_progress"},
 			},
@@ -51,17 +51,22 @@ func (s *RoleSeeder) SeedRoles(ctx context.Context) error {
 		},
 	}
 
+	var seededRoles []*domain.Role
+
 	for _, role := range roles {
 		existing, err := s.rr.GetByName(ctx, role.Name)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		if existing == nil {
 			if err := s.rr.Create(ctx, role); err != nil {
-				return err
+				return nil, err
 			}
+			seededRoles = append(seededRoles, role)
+		} else {
+			seededRoles = append(seededRoles, existing)
 		}
 	}
-	return nil
+	return seededRoles, nil
 }
