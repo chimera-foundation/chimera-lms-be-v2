@@ -39,8 +39,9 @@ func (r *OrganizationRepoPostgres) Create(ctx context.Context, org *domain.Organ
 
 func (r *OrganizationRepoPostgres) GetByID(ctx context.Context, id uuid.UUID) (*domain.Organization, error) {
 	query := `
-			SELECT id, name, slug, type, created_at, updated_at, is_system_org
-			WHERE if `
+			SELECT id, name, slug, type, created_at, updated_at, is_system_org 
+			FROM organizations 
+			WHERE id = $1 AND deleted_at IS NULL`
 
 	organization := &domain.Organization{}
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
