@@ -16,42 +16,43 @@ func NewRoleSeeder(rr domain.RoleRepository) *RoleSeeder {
 	}
 }
 
-func (s *RoleSeeder) SeedRoles(ctx context.Context) error {
-	roles := []domain.Role{
-		{
-			Name: "superadmin",
-			Permissions: map[string][]string{
-				"all": {"manage"}, 
-			},
+var Roles []domain.Role = []domain.Role{
+	{
+		Name: "superadmin",
+		Permissions: map[string][]string{
+			"all": {"manage"}, 
 		},
-		{
-			Name: "admin",
-			Permissions: map[string][]string{
-				"user":         {"create", "read", "update", "delete", "impersonate"},
-				"course":       {"read", "delete", "archive"},
-				"organization": {"read", "update"},
-				"report":       {"read", "export"},
-				"billing":      {"read", "refund"},
-			},
+	},
+	{
+		Name: "admin",
+		Permissions: map[string][]string{
+			"user":         {"create", "read", "update", "delete", "impersonate"},
+			"course":       {"read", "delete", "archive"},
+			"organization": {"read", "update"},
+			"report":       {"read", "export"},
+			"billing":      {"read", "refund"},
 		},
-		{
-			Name: "teacher",
-			Permissions: map[string][]string{
-				"course": {"create", "read", "update", "delete"},
-				"content": {"upload", "organize"},
-				"student": {"grade", "view_progress"},
-			},
+	},
+	{
+		Name: "teacher",
+		Permissions: map[string][]string{
+			"course": {"create", "read", "update", "delete"},
+			"content": {"upload", "organize"},
+			"student": {"grade", "view_progress"},
 		},
-		{
-			Name: "student",
-			Permissions: map[string][]string{
-				"course": {"read", "enroll"},
-				"quiz":   {"take", "view_results"},
-			},
+	},
+	{
+		Name: "student",
+		Permissions: map[string][]string{
+			"course": {"read", "enroll"},
+			"quiz":   {"take", "view_results"},
 		},
-	}
+	},
+}
 
-	for _, role := range roles {
+func (s *RoleSeeder) SeedRoles(ctx context.Context) error {
+
+	for _, role := range Roles {
 		existing, err := s.rr.GetByName(ctx, role.Name)
 		if err != nil {
 			return err
