@@ -18,31 +18,31 @@ func NewProgramSeeder(r domain.ProgramRepository) *ProgramSeeder {
 	}
 }
 
-func (s *ProgramSeeder) SeedPrograms(ctx context.Context) error {
+func (s *ProgramSeeder) SeedPrograms(ctx context.Context) ([]*domain.Program, error) {
 	orgID, ok := auth.GetOrgID(ctx)
 	if !ok {
-		return errors.New("Organization ID not found") 
+		return nil, errors.New("Organization ID not found")
 	}
 
-	programs := []*domain.Program {
+	programs := []*domain.Program{
 		{
 			OrganizationID: orgID,
-			Name: "Matematika dan Ilmu Pengetahuan Alam (MIPA)",
-			Description: "Sesuai judul bg",
+			Name:           "Matematika dan Ilmu Pengetahuan Alam (MIPA)",
+			Description:    "Sesuai judul bg",
 		},
 		{
 			OrganizationID: orgID,
-			Name: "Ilmu Pengetahuan Sosial (IPS)",
-			Description: "Sesuai sejarah bg",
+			Name:           "Ilmu Pengetahuan Sosial (IPS)",
+			Description:    "Sesuai sejarah bg",
 		},
 	}
 
 	for _, program := range programs {
 		err := s.r.Create(ctx, program)
 		if err != nil {
-			return errors.New("Failed at creating a program")
+			return nil, errors.New("Failed at creating a program")
 		}
 	}
 
-	return nil
+	return programs, nil
 }
