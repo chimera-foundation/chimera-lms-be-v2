@@ -19,10 +19,10 @@ func NewEducationLevelRepository(elr domain.EducationLevelRepository) *Education
 	}
 }
 
-func (s* EducationLevelSeeder) SeedEducationLevels(ctx context.Context) error {
+func (s *EducationLevelSeeder) SeedEducationLevels(ctx context.Context) ([]*domain.EducationLevel, error) {
 	orgID, ok := auth.GetOrgID(ctx)
 	if !ok {
-		return errors.New("Organization ID not found")
+		return nil, errors.New("Organization ID not found")
 	}
 
 	educationLevels := []*domain.EducationLevel{
@@ -36,9 +36,9 @@ func (s* EducationLevelSeeder) SeedEducationLevels(ctx context.Context) error {
 	for _, eduLevel := range educationLevels {
 		err := s.elr.Create(ctx, eduLevel)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return educationLevels, nil
 }
