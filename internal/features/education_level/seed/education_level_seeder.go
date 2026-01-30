@@ -25,7 +25,7 @@ func (s* EducationLevelSeeder) SeedEducationLevels(ctx context.Context) error {
 		return errors.New("Organization ID not found")
 	}
 
-	educationLevels := []domain.EducationLevel{
+	educationLevels := []*domain.EducationLevel{
 		{
 			OrganizationID: orgID,
 			Name: "High School",
@@ -33,9 +33,11 @@ func (s* EducationLevelSeeder) SeedEducationLevels(ctx context.Context) error {
 		},
 	}
 
-	err := s.elr.Create(ctx, &educationLevels[0])
-	if err != nil {
-		return err
+	for _, eduLevel := range educationLevels {
+		err := s.elr.Create(ctx, eduLevel)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
