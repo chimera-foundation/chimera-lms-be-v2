@@ -17,7 +17,7 @@ func NewRoleSeeder(rr domain.RoleRepository) *RoleSeeder {
 }
 
 func (s *RoleSeeder) SeedRoles(ctx context.Context) error {
-	roles := []domain.Role{
+	roles := []*domain.Role{
 		{
 			Name: "superadmin",
 			Permissions: map[string][]string{
@@ -58,7 +58,7 @@ func (s *RoleSeeder) SeedRoles(ctx context.Context) error {
 		}
 
 		if existing == nil {
-			if err := s.rr.Create(ctx, &role); err != nil {
+			if err := s.rr.Create(ctx, role); err != nil {
 				return err
 			}
 		}
