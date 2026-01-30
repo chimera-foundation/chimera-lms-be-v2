@@ -15,3 +15,12 @@ type AcademicPeriod struct {
 
 	IsActive bool
 }
+
+func NewAcademicPeriod(name string, startDate, endDate time.Time) *AcademicPeriod {
+	return &AcademicPeriod{
+		Name: name,
+		StartDate: startDate,
+		EndDate: endDate,
+		IsActive: true,
+	}
+}
