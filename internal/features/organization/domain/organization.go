@@ -25,3 +25,19 @@ type Organization struct {
 	IsActive bool
 	IsSystemOrg *bool
 }
+
+func NewOrganization(
+	name string,
+	slug string,
+	org_type OrgType,
+	address string,
+	academicPeriods []AcademicPeriod,
+) *Organization {
+	return &Organization{
+		Name: name,
+		Slug: slug,
+		Type: org_type,
+		Address: address,
+		AcademicPeriods: academicPeriods,
+	}
+}
