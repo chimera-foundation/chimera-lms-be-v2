@@ -11,6 +11,8 @@ import (
 	u "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/seed"
 	elr "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/education_level/repository/postgres"
 	el "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/education_level/seed"
+	prog "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/program/repository/postgres"
+	pr "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/program/seed"
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared/auth"
 )
 
@@ -29,6 +31,9 @@ func main() {
 
     educationLevelRepo := elr.NewEducationLevelRepository(db)
     educationLevelSeeder := el.NewEducationLevelRepository(educationLevelRepo)
+
+    programRepo := prog.NewProgramRepository(db)
+    programSeeder := pr.NewProgramSeeder(programRepo)
 
     ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
     defer cancel()
@@ -65,5 +70,13 @@ func main() {
         logger.Info("Education Level seeding failed: ", err.Error())
     } else {
         logger.Info("Education Level seeding complete...")
+    }
+
+    logger.Info("Starting program seeding...")
+    err = programSeeder.SeedPrograms(ctx)
+    if err != nil {
+        logger.Info("Program seeding failed: ", err.Error())
+    } else {
+        logger.Info("Program seeding complete...")
     }
 }
