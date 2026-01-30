@@ -8,22 +8,22 @@ import (
 )
 
 type OrganizationSeeder struct {
-	or domain.OrganizationRepository
+	or  domain.OrganizationRepository
 	apr domain.AcademicPeriodRepository
 }
 
 func NewOrganizationSeeder(or domain.OrganizationRepository, apr domain.AcademicPeriodRepository) *OrganizationSeeder {
 	return &OrganizationSeeder{
-		or: or,
+		or:  or,
 		apr: apr,
 	}
 }
 
-func (s *OrganizationSeeder) SeedOrganizations(ctx context.Context) error {
+func (s *OrganizationSeeder) SeedOrganizations(ctx context.Context) (*domain.Organization, error) {
 	mock_period := domain.NewAcademicPeriod(
 		"2026/2027 genap",
 		time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC), // Typical start of Ganjil
-    	time.Date(2026, time.June, 31, 23, 59, 59, 0, time.UTC),
+		time.Date(2026, time.June, 31, 23, 59, 59, 0, time.UTC),
 	)
 
 	org_type := domain.OrgType("high_school")
@@ -40,13 +40,13 @@ func (s *OrganizationSeeder) SeedOrganizations(ctx context.Context) error {
 
 	err := s.or.Create(ctx, organization)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = s.apr.Create(ctx, mock_period, organization.ID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return organization, nil
 }
