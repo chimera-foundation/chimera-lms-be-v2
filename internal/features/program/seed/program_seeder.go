@@ -24,7 +24,7 @@ func (s *ProgramSeeder) SeedPrograms(ctx context.Context) error {
 		return errors.New("Organization ID not found") 
 	}
 
-	programs := []domain.Program {
+	programs := []*domain.Program {
 		{
 			OrganizationID: orgID,
 			Name: "Matematika dan Ilmu Pengetahuan Alam (MIPA)",
@@ -37,8 +37,8 @@ func (s *ProgramSeeder) SeedPrograms(ctx context.Context) error {
 		},
 	}
 
-	for i := range programs {
-		err := s.r.Create(ctx, &programs[i])
+	for _, program := range programs {
+		err := s.r.Create(ctx, program)
 		if err != nil {
 			return errors.New("Failed at creating a program")
 		}
