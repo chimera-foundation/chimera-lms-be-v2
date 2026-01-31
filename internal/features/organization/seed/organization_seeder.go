@@ -19,7 +19,7 @@ func NewOrganizationSeeder(or domain.OrganizationRepository, apr domain.Academic
 	}
 }
 
-func (s *OrganizationSeeder) SeedOrganizations(ctx context.Context) (*domain.Organization, error) {
+func (s *OrganizationSeeder) SeedOrganizations(ctx context.Context) (*domain.Organization, *domain.AcademicPeriod, error) {
 	mock_period := domain.NewAcademicPeriod(
 		"2026/2027 genap",
 		time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC), // Typical start of Ganjil
@@ -40,13 +40,13 @@ func (s *OrganizationSeeder) SeedOrganizations(ctx context.Context) (*domain.Org
 
 	err := s.or.Create(ctx, organization)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	err = s.apr.Create(ctx, mock_period, organization.ID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return organization, nil
+	return organization, mock_period, nil
 }
