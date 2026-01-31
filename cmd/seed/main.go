@@ -17,10 +17,13 @@ import (
 	el "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/education_level/seed"
 	er "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/enrollment/repository/postgres"
 	enroll "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/enrollment/seed"
+	eventr "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/event/repository/postgres"
+	event "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/event/seed"
 	or "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/organization/repository/postgres"
 	o "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/organization/seed"
 	prog "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/program/repository/postgres"
 	pr "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/program/seed"
+	sectionDomain "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/section/domain"
 	secr "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/section/repository/postgres"
 	sec "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/section/seed"
 	subjectDomain "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/subject/domain"
@@ -182,11 +185,64 @@ func main() {
 	}
 
 	logger.Info("Starting lesson seeding...")
-	_, err = lessonSeeder.SeedLessons(ctx, seededModules)
+	seededLessons, err := lessonSeeder.SeedLessons(ctx, seededModules)
 	if err != nil {
 		logger.Info("Lesson seeding failed: ", err.Error())
 	} else {
 		logger.Info("Lesson seeding complete...")
+	}
+
+	// Event Seeder (Holidays + Lesson Schedules)
+	eventRepo := eventr.NewEventRepository(db)
+	eventSeeder := event.NewEventSeeder(eventRepo)
+
+	logger.Info("Starting Indonesia holiday seeding...")
+	googleAPIKey := v.GetString("GOOGLE_API_KEY")
+	if googleAPIKey == "" {
+		logger.Info("Skipping holiday seeding: GOOGLE_API_KEY not found in configuration")
+	} else {
+		_, err = eventSeeder.SeedIndonesiaHolidays(ctx, 2026, googleAPIKey)
+		if err != nil {
+			logger.Info("Indonesia holiday seeding failed: ", err.Error())
+		} else {
+			logger.Info("Indonesia holiday seeding complete...")
+		}
+	}
+
+	// Build module -> section mapping based on course grade level
+	moduleToCourse := make(map[uuid.UUID]int) // moduleID -> gradeLevel
+	for _, module := range seededModules {
+		for _, course := range seededCourses {
+			if module.CourseID == course.ID {
+				moduleToCourse[module.ID] = course.GradeLevel
+				break
+			}
+		}
+	}
+
+	sectionsByGrade := make(map[int]*sectionDomain.Section)
+	for _, section := range seededSections {
+		switch section.Name {
+		case "10-A":
+			sectionsByGrade[10] = section
+		case "11-A":
+			sectionsByGrade[11] = section
+		}
+	}
+
+	sectionsByModule := make(map[uuid.UUID]*sectionDomain.Section)
+	for moduleID, gradeLevel := range moduleToCourse {
+		if section, ok := sectionsByGrade[gradeLevel]; ok {
+			sectionsByModule[moduleID] = section
+		}
+	}
+
+	logger.Info("Starting lesson schedule seeding...")
+	_, err = eventSeeder.SeedLessonSchedules(ctx, seededLessons, sectionsByModule)
+	if err != nil {
+		logger.Info("Lesson schedule seeding failed: ", err.Error())
+	} else {
+		logger.Info("Lesson schedule seeding complete...")
 	}
 
 	// Enrollment Seeder
