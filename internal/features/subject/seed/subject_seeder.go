@@ -29,7 +29,7 @@ func (s *SubjectSeeder) SeedSubjects(ctx context.Context, educationLevelID uuid.
 		{
 			OrganizationID: orgID,
 			EducationLevelID: educationLevelID,
-			Name: "Calculus I",
+			Name: "Calculus",
 			Code: "MTK-SMA",
 		},
 		{
