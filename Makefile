@@ -17,4 +17,20 @@ migrate-down:
 migrate-force:
 	migrate -path migrations -database "$(DB_URI)" force $(version)
 
-.PHONY: migration migrate-up migrate-down migrate-force
+# Start everything
+dev-up:
+	docker-compose up -d
+
+# Shut everything down and wipe volumes (start fresh)
+dev-down:
+	docker-compose down -v
+
+# Run your new Seeder
+seed:
+	go run cmd/seed/main.go
+
+# View Logs
+logs:
+	docker-compose logs -f
+
+.PHONY: migration migrate-up migrate-down migrate-force dev-up dev-down migrate-up seed
