@@ -1,0 +1,37 @@
+name: Deploy to Azure VM
+
+on:
+  push:
+    branches:
+      - main  # Runs whenever you push to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: azureuser
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/chimera-lms-be-v2  
+            
+            # Use a 'heredoc' to write the .env safely
+            cat << 'EOF' > .env
+            ${{ secrets.ENV_FILE }}
+            EOF
+            
+            # Pull latest code
+            git pull origin main
+            
+            # Build and restart 
+            # --remove-orphans ensures old services aren't hanging around
+            docker compose up -d --build --remove-orphans
+            
+            # Only prune if the build was successful
+            docker image prune -f
