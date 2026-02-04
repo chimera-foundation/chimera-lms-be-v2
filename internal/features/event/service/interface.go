@@ -14,6 +14,6 @@ type EventService interface {
 	DeleteEvent(ctx context.Context, id uuid.UUID) error
 	GetCalendarForUser(ctx context.Context, userID uuid.UUID, start, end time.Time) ([]*domain.Event, error)
 	GetSectionSchedule(ctx context.Context, sectionID uuid.UUID, start, end time.Time) ([]*domain.Event, error)
-	GetAnnouncements(ctx context.Context, orgID uuid.UUID, limit int, offset int) ([]*domain.Event, error)
-	GetEvents(ctx context.Context, orgID uuid.UUID, limit int, offset int) ([]*domain.Event, error) 
+	GetAnnouncements(ctx context.Context, orgID uuid.UUID, start, end time.Time, limit int, offset int) ([]*domain.Event, error)
+	GetEvents(ctx context.Context, orgID uuid.UUID, start, end time.Time, limit int, offset int) ([]*domain.Event, error)
 }
