@@ -245,6 +245,22 @@ func main() {
 		logger.Info("Lesson schedule seeding complete...")
 	}
 
+	logger.Info("Starting school events seeding...")
+	_, err = eventSeeder.SeedSchoolEvents(ctx)
+	if err != nil {
+		logger.Info("School events seeding failed: ", err.Error())
+	} else {
+		logger.Info("School events seeding complete...")
+	}
+
+	logger.Info("Starting announcements seeding...")
+	_, err = eventSeeder.SeedAnnouncements(ctx)
+	if err != nil {
+		logger.Info("Announcements seeding failed: ", err.Error())
+	} else {
+		logger.Info("Announcements seeding complete...")
+	}
+
 	// Enrollment Seeder
 	enrollmentRepo := er.NewEnrollmentRepository(db)
 	enrollmentSeeder := enroll.NewEnrollmentSeeder(enrollmentRepo)
