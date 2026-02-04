@@ -28,6 +28,11 @@ jobs:
             
             # Pull latest code
             git pull origin main
+
+            if grep -q "SEED_DB=true" .env; then
+                echo "⚠️ SEED_DB is true. Wiping volumes..."
+                docker compose down -v
+            fi
             
             # Build and restart 
             # --remove-orphans ensures old services aren't hanging around
