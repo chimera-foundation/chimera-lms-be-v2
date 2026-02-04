@@ -165,7 +165,18 @@ func (h *EventHandler) GetAnnouncements(w http.ResponseWriter, r *http.Request) 
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
 
-	events, err := h.eventService.GetAnnouncements(r.Context(), orgID, limit, offset)
+	startStr := r.URL.Query().Get("start")
+	endStr := r.URL.Query().Get("end")
+
+	var startTime, endTime time.Time
+	if startStr != "" {
+		startTime, _ = time.Parse(time.RFC3339, startStr)
+	}
+	if endStr != "" {
+		endTime, _ = time.Parse(time.RFC3339, endStr)
+	}
+
+	events, err := h.eventService.GetAnnouncements(r.Context(), orgID, startTime, endTime, limit, offset)
 	if err != nil {
 		response.InternalServerError(w, err.Error())
 		return
@@ -184,7 +195,18 @@ func (h *EventHandler) GetEvents(w http.ResponseWriter, r *http.Request) {
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
 
-	events, err := h.eventService.GetEvents(r.Context(), orgID, limit, offset)
+	startStr := r.URL.Query().Get("start")
+	endStr := r.URL.Query().Get("end")
+
+	var startTime, endTime time.Time
+	if startStr != "" {
+		startTime, _ = time.Parse(time.RFC3339, startStr)
+	}
+	if endStr != "" {
+		endTime, _ = time.Parse(time.RFC3339, endStr)
+	}
+
+	events, err := h.eventService.GetEvents(r.Context(), orgID, startTime, endTime, limit, offset)
 	if err != nil {
 		response.InternalServerError(w, err.Error())
 		return
