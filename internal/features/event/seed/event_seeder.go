@@ -153,6 +153,7 @@ func (s *EventSeeder) SeedLessonSchedules(
 			EventType:      domain.Schedule,
 			Scope:          domain.ScopeSection,
 			SectionID:      &section.ID,
+			Location:       "Classroom",
 			StartAt:        &startTime,
 			EndAt:          &endTime,
 			Color:          "#3B82F6", // Blue for schedules
@@ -167,6 +168,109 @@ func (s *EventSeeder) SeedLessonSchedules(
 
 		// Move to next day (day break between lessons)
 		currentDate = currentDate.AddDate(0, 0, 1)
+	}
+
+	return seededEvents, nil
+}
+
+func (s *EventSeeder) SeedSchoolEvents(ctx context.Context) ([]*domain.Event, error) {
+	orgID, ok := auth.GetOrgID(ctx)
+	if !ok {
+		return nil, errors.New("organization ID not found in context")
+	}
+
+	loc := time.FixedZone("WIB", 7*60*60)
+
+	// 1. Christmas celebration, 07.00-08.00 in the School Hall, done in january
+	start1 := time.Date(2026, time.January, 12, 7, 0, 0, 0, loc)
+	end1 := time.Date(2026, time.January, 12, 8, 0, 0, 0, loc)
+
+	// 2. New Curicullum announcement 09.30-10.00, school hall, done in january different day
+	start2 := time.Date(2026, time.January, 13, 9, 30, 0, 0, loc)
+	end2 := time.Date(2026, time.January, 13, 10, 0, 0, 0, loc)
+
+	// 3. Student Consultation, 09.30-11.00, school hall, done in january too but different day
+	start3 := time.Date(2026, time.January, 14, 9, 30, 0, 0, loc)
+	end3 := time.Date(2026, time.January, 14, 11, 0, 0, 0, loc)
+
+	seededEvents := []*domain.Event{
+		domain.NewEvent(
+			orgID,
+			"Christmas Celebration",
+			domain.Vanilla,
+			domain.WithLocation("School Hall"),
+			domain.WithTimes(start1, end1),
+		),
+		domain.NewEvent(
+			orgID,
+			"New Curriculum Announcement",
+			domain.Meeting,
+			domain.WithLocation("School Hall"),
+			domain.WithTimes(start2, end2),
+		),
+		domain.NewEvent(
+			orgID,
+			"Student Consultation",
+			domain.Meeting,
+			domain.WithLocation("School Hall"),
+			domain.WithTimes(start3, end3),
+		),
+	}
+
+	for _, event := range seededEvents {
+		if err := s.r.Create(ctx, event); err != nil {
+			return nil, fmt.Errorf("failed to create event %s: %w", event.Title, err)
+		}
+	}
+
+	return seededEvents, nil
+}
+
+func (s *EventSeeder) SeedAnnouncements(ctx context.Context) ([]*domain.Event, error) {
+	orgID, ok := auth.GetOrgID(ctx)
+	if !ok {
+		return nil, errors.New("organization ID not found in context")
+	}
+
+	defaultImgURL := "https://placehold.co/600x400"
+	loc := time.FixedZone("WIB", 7*60*60)
+
+	// Create timestamps around the seeding period (Jan 2026)
+	now := time.Date(2026, time.January, 15, 8, 0, 0, 0, loc)
+
+	events := []*domain.Event{
+		domain.NewAnnouncement(
+			orgID,
+			"Weather Alert",
+			"Good morning, students!\nJust a quick weather update:\nToday's weather is expected to be rainy.\nIf you plan on being outside, be sure to dress accordingly, and if the weather changes, we'll let you know about any adjustments.\nStay safe and warm!",
+			domain.ScopeGlobal,
+			domain.WithImage(defaultImgURL),
+			domain.WithTimes(now, now.Add(1*time.Hour)),
+		),
+		domain.NewAnnouncement(
+			orgID,
+			"Reminder About School Rules",
+			"Attention, students!\nThis is a reminder to please follow our school's dress code.\nIn particular, please remember that hats, hoodies, and inappropriate graphics on clothing are not allowed during school hours.\nIf you have any questions, feel free to ask a staff member.\nLet's keep our school environment respectful and positive!",
+			domain.ScopeGlobal,
+			domain.WithImage(defaultImgURL),
+			domain.WithTimes(now.Add(24*time.Hour), now.Add(25*time.Hour)),
+		),
+		domain.NewAnnouncement(
+			orgID,
+			"Morning Announcement",
+			"Good morning, students and staff!\nWelcome to a new day here at School! \nToday is Wednesday, March 3rd 2025.\nPlease stand for the Pledge of Allegiance.\n(After the pledge)\nNow, let's go over the lunch menu for today:\nChicken nuggets with mashed potatoes\nVeggie wrap with a side of fruit\nA salad bar: Remember to be kind and stay safe.",
+			domain.ScopeGlobal,
+			domain.WithImage(defaultImgURL),
+			domain.WithTimes(now.Add(48*time.Hour), now.Add(49*time.Hour)),
+		),
+	}
+
+	var seededEvents []*domain.Event
+	for _, event := range events {
+		if err := s.r.Create(ctx, event); err != nil {
+			return nil, fmt.Errorf("failed to create announcement %s: %w", event.Title, err)
+		}
+		seededEvents = append(seededEvents, event)
 	}
 
 	return seededEvents, nil
