@@ -29,6 +29,7 @@ type Assessment struct {
 	shared.Base
 
 	OrganizationID uuid.UUID
+	CourseID uuid.UUID
 
 	Title string
 	Type AssessmentType
