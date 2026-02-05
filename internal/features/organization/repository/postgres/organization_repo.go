@@ -96,7 +96,7 @@ func (r *OrganizationRepoPostgres) Delete(ctx context.Context, orgID uuid.UUID) 
 		DELETE FROM organizations
 		WHERE id=$1`
 
-	res, err := r.db.Exec(query, orgID)
+	res, err := r.db.ExecContext(ctx, query, orgID)
 
 	if err != nil {
 		return fmt.Errorf("failed to delete organization: %w", err)
