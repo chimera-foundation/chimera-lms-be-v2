@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/content/domain"
@@ -19,8 +20,8 @@ func NewContentRepository(db *sql.DB) domain.ContentRepository {
 
 func (r *ContentRepoPostgres) Create(ctx context.Context, content *domain.Content) error {
 	query := `
-		INSERT INTO contents (id, lesson_id, assessment_id, content_type, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6)`
+		INSERT INTO contents (id, lesson_id, assessment_id, content_type, content_data, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
 	content.PrepareCreate(nil)
 
@@ -34,11 +35,21 @@ func (r *ContentRepoPostgres) Create(ctx context.Context, content *domain.Conten
 		lessonID = content.LessonID
 	}
 
+	var contentData interface{}
+	if content.Data != nil {
+		data, err := json.Marshal(content.Data)
+		if err != nil {
+			return fmt.Errorf("failed to marshal content data: %w", err)
+		}
+		contentData = data
+	}
+
 	_, err := r.db.ExecContext(ctx, query,
 		content.ID,
 		lessonID,
 		assessmentID,
 		content.Type,
+		contentData,
 		content.CreatedAt,
 		content.UpdatedAt,
 	)
