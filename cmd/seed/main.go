@@ -5,8 +5,11 @@ import (
 	"time"
 
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/app"
+	assessmentRepo "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/assessment/repository/postgres"
+	assessmentSeed "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/assessment/seed"
 	cohr "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/cohort/repository/postgres"
 	coh "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/cohort/seed"
+	contentRepo "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/content/repository/postgres"
 	cr "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/course/repository/postgres"
 	lr "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/course/repository/postgres"
 	mr "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/course/repository/postgres"
@@ -29,6 +32,8 @@ import (
 	subjectDomain "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/subject/domain"
 	subj "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/subject/repository/postgres"
 	sub "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/subject/seed"
+	submissionRepo "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/submission/repository/postgres"
+	submissionSeed "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/submission/seed"
 	ur "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/repository/postgres"
 	u "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/seed"
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared/auth"
@@ -266,11 +271,36 @@ func main() {
 	enrollmentSeeder := enroll.NewEnrollmentSeeder(enrollmentRepo)
 
 	logger.Info("Starting enrollment seeding...")
-	_, err = enrollmentSeeder.SeedEnrollments(ctx, seededUsers, seededCourses, seededSections, academicPeriod.ID)
+	seededEnrollments, err := enrollmentSeeder.SeedEnrollments(ctx, seededUsers, seededCourses, seededSections, academicPeriod.ID)
 	if err != nil {
 		logger.Info("Enrollment seeding failed: ", err.Error())
 	} else {
 		logger.Info("Enrollment seeding complete...")
+	}
+
+	// Assessment Seeder (with content for attachments)
+	assessmentRepository := assessmentRepo.NewAssessmentRepoPostgres(db)
+	contentRepository := contentRepo.NewContentRepository(db)
+	assessmentSeeder := assessmentSeed.NewAssessmentSeeder(assessmentRepository, contentRepository)
+
+	logger.Info("Starting assessment seeding...")
+	seededAssessments, err := assessmentSeeder.SeedAssessments(ctx, seededCourses)
+	if err != nil {
+		logger.Info("Assessment seeding failed: ", err.Error())
+	} else {
+		logger.Info("Assessment seeding complete...")
+	}
+
+	// Submission Seeder
+	submissionRepository := submissionRepo.NewSubmissionRepoPostgres(db)
+	submissionSeeder := submissionSeed.NewSubmissionSeeder(submissionRepository)
+
+	logger.Info("Starting submission seeding...")
+	_, err = submissionSeeder.SeedSubmissions(ctx, seededEnrollments, seededAssessments)
+	if err != nil {
+		logger.Info("Submission seeding failed: ", err.Error())
+	} else {
+		logger.Info("Submission seeding complete...")
 	}
 
 	// Cohort Member Seeder
