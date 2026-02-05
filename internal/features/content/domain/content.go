@@ -8,16 +8,24 @@ import (
 type ContentType string
 
 const (
-	Video ContentType = "video"
+	Video    ContentType = "video"
 	Document ContentType = "document"
-	Quiz ContentType = "quiz"
+	Quiz     ContentType = "quiz"
 )
+
+// ContentData stores the JSONB content data (e.g., URL, metadata)
+type ContentData struct {
+	URL         string `json:"url,omitempty"`
+	Title       string `json:"title,omitempty"`
+	Description string `json:"description,omitempty"`
+}
 
 type Content struct {
 	shared.Base
 
-	LessonID uuid.UUID
+	LessonID     uuid.UUID
 	AssessmentID uuid.UUID
 
 	Type ContentType
+	Data *ContentData
 }
