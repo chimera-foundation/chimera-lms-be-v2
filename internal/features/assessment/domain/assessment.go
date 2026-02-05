@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"errors"
 	"time"
 
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared"
@@ -35,4 +36,32 @@ type Assessment struct {
 	Type AssessmentType
 	SubType AssessmentSubType
 	DueDate time.Time
+}
+
+func NewAssessment(
+    orgID uuid.UUID,
+    courseID uuid.UUID,
+    title string,
+    assessmentType string,
+    subType string,
+    dueDate time.Time,
+) *Assessment {
+    return &Assessment{
+        OrganizationID: orgID,
+        CourseID:       courseID,
+        Title:          title,
+        Type:           AssessmentType(assessmentType),
+        SubType:        AssessmentSubType(subType),
+        DueDate:        dueDate,
+    }
+}
+
+func (a *Assessment) Validate() error {
+    if a.Title == "" {
+        return errors.New("assessment title is required")
+    }
+    if a.OrganizationID == uuid.Nil || a.CourseID == uuid.Nil {
+        return errors.New("organization and course IDs must be valid")
+    }
+    return nil
 }
