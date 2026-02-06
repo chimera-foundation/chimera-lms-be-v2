@@ -46,10 +46,10 @@ func main() {
 	db := app.NewDatabase(v, logger)
 	defer db.Close()
 
-	roleRepo := ur.NewRoleRepository(db)
+	roleRepo := ur.NewRoleRepository(db, logger)
 	roleSeeder := u.NewRoleSeeder(roleRepo)
 
-	organizationRepo := or.NewOrganizationRepo(db)
+	organizationRepo := or.NewOrganizationRepo(db, logger)
 	acadPeriodRepo := or.NewAcademicPeriodRepository(db)
 	organizationSeeder := o.NewOrganizationSeeder(organizationRepo, acadPeriodRepo)
 
@@ -101,7 +101,7 @@ func main() {
 	}
 
 	// User Seeder
-	userRepo := ur.NewUserRepo(db)
+	userRepo := ur.NewUserRepo(db, logger)
 	userSeeder := u.NewUserSeeder(userRepo, roleRepo)
 	logger.Info("Starting user seeding...")
 	seededUsers, err := userSeeder.SeedUsers(ctx, seededOrg.ID)
@@ -135,10 +135,10 @@ func main() {
 	}
 
 	// Cohort & Section Seeder
-	cohortRepo := cohr.NewCohortRepository(db)
+	cohortRepo := cohr.NewCohortRepository(db, logger)
 	cohortSeeder := coh.NewCohortSeeder(cohortRepo)
 
-	sectionRepo := secr.NewSectionRepository(db)
+	sectionRepo := secr.NewSectionRepository(db, logger)
 	sectionSeeder := sec.NewSectionSeeder(sectionRepo)
 
 	logger.Info("Starting cohort seeding...")
@@ -198,7 +198,7 @@ func main() {
 	}
 
 	// Event Seeder (Holidays + Lesson Schedules)
-	eventRepo := eventr.NewEventRepository(db)
+	eventRepo := eventr.NewEventRepository(db, logger)
 	eventSeeder := event.NewEventSeeder(eventRepo)
 
 	logger.Info("Starting Indonesia holiday seeding...")
@@ -267,7 +267,7 @@ func main() {
 	}
 
 	// Enrollment Seeder
-	enrollmentRepo := er.NewEnrollmentRepository(db)
+	enrollmentRepo := er.NewEnrollmentRepository(db, logger)
 	enrollmentSeeder := enroll.NewEnrollmentSeeder(enrollmentRepo)
 
 	logger.Info("Starting enrollment seeding...")
@@ -279,7 +279,7 @@ func main() {
 	}
 
 	// Assessment Seeder (with content for attachments)
-	assessmentRepository := assessmentRepo.NewAssessmentRepoPostgres(db)
+	assessmentRepository := assessmentRepo.NewAssessmentRepoPostgres(db, logger)
 	contentRepository := contentRepo.NewContentRepository(db)
 	assessmentSeeder := assessmentSeed.NewAssessmentSeeder(assessmentRepository, contentRepository)
 
