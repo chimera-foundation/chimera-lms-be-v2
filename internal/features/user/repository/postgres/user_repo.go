@@ -10,27 +10,30 @@ import (
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/domain"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
+	"github.com/sirupsen/logrus"
 )
 
 type UserRepoPostgres struct {
-	db *sql.DB
+	db  *sql.DB
+	log *logrus.Logger
 }
 
-func NewUserRepo(db *sql.DB) domain.UserRepository {
-	return &UserRepoPostgres{db: db}
+func NewUserRepo(db *sql.DB, log *logrus.Logger) domain.UserRepository {
+	return &UserRepoPostgres{db: db, log: log}
 }
 
 func (r *UserRepoPostgres) Create(ctx context.Context, user *domain.User) error {
-    tx, err := r.db.BeginTx(ctx, nil)
-    if err != nil {
-        return fmt.Errorf("failed to begin transaction: %w", err)
-    }
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		r.log.WithError(err).Error("failed to begin transaction for user creation")
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
 
-    defer tx.Rollback()
+	defer tx.Rollback()
 
-    user.PrepareCreate(&user.OrganizationID)
+	user.PrepareCreate(&user.OrganizationID)
 
-    userQuery := `
+	userQuery := `
         INSERT INTO users (
             id, 
             organization_id, 
@@ -44,46 +47,50 @@ func (r *UserRepoPostgres) Create(ctx context.Context, user *domain.User) error 
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 
-    _, err = tx.ExecContext(ctx, userQuery,
-        user.ID,
-        user.OrganizationID,
-        user.Email,
-        user.PasswordHash,
-        user.IsSuperuser,
-        user.CreatedAt,
-        user.UpdatedAt,
-        user.FirstName,
-        user.LastName,
-    )
-    if err != nil {
-        return fmt.Errorf("failed to insert user: %w", err)
-    }
+	_, err = tx.ExecContext(ctx, userQuery,
+		user.ID,
+		user.OrganizationID,
+		user.Email,
+		user.PasswordHash,
+		user.IsSuperuser,
+		user.CreatedAt,
+		user.UpdatedAt,
+		user.FirstName,
+		user.LastName,
+	)
+	if err != nil {
+		r.log.WithError(err).WithField("email", user.Email).Error("failed to insert user")
+		return fmt.Errorf("failed to insert user: %w", err)
+	}
 
-    if len(user.Roles) > 0 {
-        roleQuery := `
+	if len(user.Roles) > 0 {
+		roleQuery := `
             INSERT INTO user_roles (user_id, role_id)
             SELECT $1, unnest($2::uuid[])`
-        
-        roleIDs := make([]uuid.UUID, len(user.Roles))
-        for i, role := range user.Roles {
-            roleIDs[i] = role.ID
-        }
 
-        _, err = tx.ExecContext(ctx, roleQuery, user.ID, pq.Array(roleIDs))
-        if err != nil {
-            return fmt.Errorf("failed to bulk assign roles: %w", err)
-        }
-    }
+		roleIDs := make([]uuid.UUID, len(user.Roles))
+		for i, role := range user.Roles {
+			roleIDs[i] = role.ID
+		}
 
-    if err := tx.Commit(); err != nil {
-        return fmt.Errorf("failed to commit transaction: %w", err)
-    }
+		_, err = tx.ExecContext(ctx, roleQuery, user.ID, pq.Array(roleIDs))
+		if err != nil {
+			r.log.WithError(err).WithField("user_id", user.ID).Error("failed to bulk assign roles")
+			return fmt.Errorf("failed to bulk assign roles: %w", err)
+		}
+	}
 
-    return nil
+	if err := tx.Commit(); err != nil {
+		r.log.WithError(err).Error("failed to commit user creation transaction")
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	r.log.WithFields(logrus.Fields{"user_id": user.ID, "email": user.Email}).Info("user created successfully")
+	return nil
 }
 
 func (r *UserRepoPostgres) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
-    query := `
+	query := `
         SELECT 
             u.id, u.organization_id, u.email, u.password_hash, u.first_name, u.last_name, 
             u.is_superuser, u.created_at, u.updated_at,
@@ -96,38 +103,40 @@ func (r *UserRepoPostgres) GetByEmail(ctx context.Context, email string) (*domai
         FROM users u
         WHERE u.email = $1 AND u.deleted_at IS NULL`
 
-    user := &domain.User{}
-    var rolesJSON []byte
+	user := &domain.User{}
+	var rolesJSON []byte
 
-    err := r.db.QueryRowContext(ctx, query, email).Scan(
-        &user.ID,
-        &user.OrganizationID,
-        &user.Email,
-        &user.PasswordHash,
-        &user.FirstName,
-        &user.LastName,
-        &user.IsSuperuser,
-        &user.CreatedAt,
-        &user.UpdatedAt,
-        &rolesJSON,
-    )
+	err := r.db.QueryRowContext(ctx, query, email).Scan(
+		&user.ID,
+		&user.OrganizationID,
+		&user.Email,
+		&user.PasswordHash,
+		&user.FirstName,
+		&user.LastName,
+		&user.IsSuperuser,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+		&rolesJSON,
+	)
 
-    if err == sql.ErrNoRows {
-        return nil, nil
-    }
-    if err != nil {
-        return nil, fmt.Errorf("failed to get user by email: %w", err)
-    }
+	if err == sql.ErrNoRows {
+		r.log.WithField("email", email).Debug("user not found by email")
+		return nil, nil
+	}
+	if err != nil {
+		r.log.WithError(err).WithField("email", email).Error("failed to get user by email")
+		return nil, fmt.Errorf("failed to get user by email: %w", err)
+	}
 
-    if err := json.Unmarshal(rolesJSON, &user.Roles); err != nil {
-        return nil, fmt.Errorf("failed to unmarshal roles: %w", err)
-    }
+	if err := json.Unmarshal(rolesJSON, &user.Roles); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal roles: %w", err)
+	}
 
-    return user, nil
+	return user, nil
 }
 
 func (r *UserRepoPostgres) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
-    query := `
+	query := `
         SELECT 
             u.id, u.organization_id, u.email, u.password_hash, u.first_name, u.last_name, 
             u.is_superuser, u.created_at, u.updated_at,
@@ -140,75 +149,79 @@ func (r *UserRepoPostgres) GetByID(ctx context.Context, id uuid.UUID) (*domain.U
         FROM users u
         WHERE u.id = $1 AND u.deleted_at IS NULL`
 
-    user := &domain.User{}
-    var rolesJSON []byte
+	user := &domain.User{}
+	var rolesJSON []byte
 
-    err := r.db.QueryRowContext(ctx, query, id).Scan(
-        &user.ID,
-        &user.OrganizationID,
-        &user.Email,
-        &user.PasswordHash,
-        &user.FirstName,
-        &user.LastName,
-        &user.IsSuperuser,
-        &user.CreatedAt,
-        &user.UpdatedAt,
-        &rolesJSON,
-    )
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&user.ID,
+		&user.OrganizationID,
+		&user.Email,
+		&user.PasswordHash,
+		&user.FirstName,
+		&user.LastName,
+		&user.IsSuperuser,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+		&rolesJSON,
+	)
 
-    if err == sql.ErrNoRows {
-        return nil, nil
-    }
-    if err != nil {
-        return nil, fmt.Errorf("failed to get user by id: %w", err)
-    }
+	if err == sql.ErrNoRows {
+		r.log.WithField("user_id", id).Debug("user not found by id")
+		return nil, nil
+	}
+	if err != nil {
+		r.log.WithError(err).WithField("user_id", id).Error("failed to get user by id")
+		return nil, fmt.Errorf("failed to get user by id: %w", err)
+	}
 
-    // Unmarshal the JSON array directly into the User.Roles slice
-    if err := json.Unmarshal(rolesJSON, &user.Roles); err != nil {
-        return nil, fmt.Errorf("failed to unmarshal roles: %w", err)
-    }
+	// Unmarshal the JSON array directly into the User.Roles slice
+	if err := json.Unmarshal(rolesJSON, &user.Roles); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal roles: %w", err)
+	}
 
-    return user, nil
+	return user, nil
 }
 
 func (r *UserRepoPostgres) Update(ctx context.Context, user *domain.User) error {
-    tx, err := r.db.BeginTx(ctx, nil)
-    if err != nil {
-        return fmt.Errorf("begin tx: %w", err)
-    }
-    defer tx.Rollback()
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		r.log.WithError(err).Error("failed to begin transaction for user update")
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
 
-    user.UpdatedAt = time.Now()
-    
-    userQuery := `
+	user.UpdatedAt = time.Now()
+
+	userQuery := `
         UPDATE users 
         SET email = $2, password_hash = $3, first_name = $4, last_name = $5, is_superuser = $6, updated_at = $7
         WHERE id = $1 AND deleted_at IS NULL`
 
-    _, err = tx.ExecContext(ctx, userQuery,
-        user.ID, user.Email, user.PasswordHash, user.FirstName, user.LastName, user.IsSuperuser, user.UpdatedAt,
-    )
-    if err != nil {
-        return fmt.Errorf("update user: %w", err)
-    }
+	_, err = tx.ExecContext(ctx, userQuery,
+		user.ID, user.Email, user.PasswordHash, user.FirstName, user.LastName, user.IsSuperuser, user.UpdatedAt,
+	)
+	if err != nil {
+		r.log.WithError(err).WithField("user_id", user.ID).Error("failed to update user")
+		return fmt.Errorf("update user: %w", err)
+	}
 
-    _, err = tx.ExecContext(ctx, "DELETE FROM user_roles WHERE user_id = $1", user.ID)
-    if err != nil {
-        return fmt.Errorf("clear roles: %w", err)
-    }
+	_, err = tx.ExecContext(ctx, "DELETE FROM user_roles WHERE user_id = $1", user.ID)
+	if err != nil {
+		return fmt.Errorf("clear roles: %w", err)
+	}
 
-    if len(user.Roles) > 0 {
-        roleIDs := make([]uuid.UUID, len(user.Roles))
-        for i, role := range user.Roles {
-            roleIDs[i] = role.ID
-        }
+	if len(user.Roles) > 0 {
+		roleIDs := make([]uuid.UUID, len(user.Roles))
+		for i, role := range user.Roles {
+			roleIDs[i] = role.ID
+		}
 
-        roleQuery := `INSERT INTO user_roles (user_id, role_id) SELECT $1, unnest($2::uuid[])`
-        _, err = tx.ExecContext(ctx, roleQuery, user.ID, pq.Array(roleIDs))
-        if err != nil {
-            return fmt.Errorf("sync roles: %w", err)
-        }
-    }
+		roleQuery := `INSERT INTO user_roles (user_id, role_id) SELECT $1, unnest($2::uuid[])`
+		_, err = tx.ExecContext(ctx, roleQuery, user.ID, pq.Array(roleIDs))
+		if err != nil {
+			return fmt.Errorf("sync roles: %w", err)
+		}
+	}
 
-    return tx.Commit()
+	return tx.Commit()
 }
