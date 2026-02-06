@@ -8,14 +8,16 @@ import (
 
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/organization/domain"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type OrganizationRepoPostgres struct {
-	db *sql.DB
+	db  *sql.DB
+	log *logrus.Logger
 }
 
-func NewOrganizationRepo(db *sql.DB) domain.OrganizationRepository {
-	return &OrganizationRepoPostgres{db: db}
+func NewOrganizationRepo(db *sql.DB, log *logrus.Logger) domain.OrganizationRepository {
+	return &OrganizationRepoPostgres{db: db, log: log}
 }
 
 func (r *OrganizationRepoPostgres) Create(ctx context.Context, org *domain.Organization) error {
@@ -32,8 +34,10 @@ func (r *OrganizationRepoPostgres) Create(ctx context.Context, org *domain.Organ
 		org.UpdatedAt,
 	)
 	if err != nil {
+		r.log.WithError(err).WithField("org_id", org.ID).Error("failed to insert organization")
 		return fmt.Errorf("failed to insert organization: %w", err)
 	}
+	r.log.WithFields(logrus.Fields{"org_id": org.ID, "name": org.Name}).Info("organization created successfully")
 	return nil
 }
 
@@ -55,9 +59,11 @@ func (r *OrganizationRepoPostgres) GetByID(ctx context.Context, id uuid.UUID) (*
 	)
 
 	if err == sql.ErrNoRows {
+		r.log.WithField("org_id", id).Debug("organization not found by id")
 		return nil, nil
 	}
 	if err != nil {
+		r.log.WithError(err).WithField("org_id", id).Error("failed to get organization by id")
 		return nil, fmt.Errorf("failed to get organization by id: %w", err)
 	}
 
@@ -80,14 +86,17 @@ func (r *OrganizationRepoPostgres) Update(ctx context.Context, org *domain.Organ
 	)
 
 	if err != nil {
+		r.log.WithError(err).WithField("org_id", org.ID).Error("failed to update organization")
 		return fmt.Errorf("failed to update organization: %w", err)
 	}
 
 	rows, _ := res.RowsAffected()
 	if rows == 0 {
+		r.log.WithField("org_id", org.ID).Warn("organization not found or already deleted for update")
 		return fmt.Errorf("organization not found or already deleted")
 	}
 
+	r.log.WithField("org_id", org.ID).Info("organization updated successfully")
 	return nil
 }
 
@@ -99,14 +108,17 @@ func (r *OrganizationRepoPostgres) Delete(ctx context.Context, orgID uuid.UUID) 
 	res, err := r.db.ExecContext(ctx, query, orgID)
 
 	if err != nil {
+		r.log.WithError(err).WithField("org_id", orgID).Error("failed to delete organization")
 		return fmt.Errorf("failed to delete organization: %w", err)
 	}
 
 	rows, _ := res.RowsAffected()
 	if rows == 0 {
+		r.log.WithField("org_id", orgID).Warn("organization not found or already deleted for deletion")
 		return fmt.Errorf("organization not found or already deleted")
 	}
 
+	r.log.WithField("org_id", orgID).Info("organization deleted successfully")
 	return nil
 }
 
@@ -128,9 +140,11 @@ func (r *OrganizationRepoPostgres) GetBySlug(ctx context.Context, slug string) (
 	)
 
 	if err == sql.ErrNoRows {
+		r.log.WithField("slug", slug).Debug("organization not found by slug")
 		return nil, nil
 	}
 	if err != nil {
+		r.log.WithError(err).WithField("slug", slug).Error("failed to get organization by slug")
 		return nil, fmt.Errorf("failed to get organization by slug: %w", err)
 	}
 
@@ -148,8 +162,10 @@ func (r *OrganizationRepoPostgres) GetIDByUserID(ctx context.Context, userID uui
 
 	if err != nil {
 		if err == sql.ErrNoRows {
+			r.log.WithField("user_id", userID).Debug("organization not found for this user")
 			return uuid.Nil, errors.New("organization not found for this user")
 		}
+		r.log.WithError(err).WithField("user_id", userID).Error("failed to get org id by user id")
 		return uuid.Nil, err
 	}
 
