@@ -11,15 +11,18 @@ import (
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/event/domain"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
+	"github.com/sirupsen/logrus"
 )
 
 type EventRepoPostgres struct {
-	db *sql.DB
+	db  *sql.DB
+	log *logrus.Logger
 }
 
-func NewEventRepository(db *sql.DB) domain.EventRepository {
+func NewEventRepository(db *sql.DB, log *logrus.Logger) domain.EventRepository {
 	return &EventRepoPostgres{
-		db: db,
+		db:  db,
+		log: log,
 	}
 }
 
@@ -41,7 +44,13 @@ func (r *EventRepoPostgres) Create(ctx context.Context, e *domain.Event) error {
 		e.SourceID, e.SourceType, e.ImageURL, e.CreatedAt, e.UpdatedAt,
 	)
 
-	return err
+	if err != nil {
+		r.log.WithError(err).WithField("event_id", e.ID).Error("failed to create event")
+		return err
+	}
+
+	r.log.WithFields(logrus.Fields{"event_id": e.ID, "title": e.Title}).Info("event created successfully")
+	return nil
 }
 
 func (r *EventRepoPostgres) Update(ctx context.Context, e *domain.Event) error {
@@ -62,20 +71,29 @@ func (r *EventRepoPostgres) Update(ctx context.Context, e *domain.Event) error {
 		e.SourceType, e.ImageURL, time.Now(), e.ID,
 	)
 	if err != nil {
+		r.log.WithError(err).WithField("event_id", e.ID).Error("failed to update event")
 		return err
 	}
 
 	rows, _ := res.RowsAffected()
 	if rows == 0 {
+		r.log.WithField("event_id", e.ID).Warn("event not found for update")
 		return errors.New("event not found")
 	}
+
+	r.log.WithField("event_id", e.ID).Info("event updated successfully")
 	return nil
 }
 
 func (r *EventRepoPostgres) Delete(ctx context.Context, id uuid.UUID) error {
 	query := `UPDATE events SET deleted_at = $1 WHERE id = $2 AND deleted_at IS NULL`
 	_, err := r.db.ExecContext(ctx, query, time.Now(), id)
-	return err
+	if err != nil {
+		r.log.WithError(err).WithField("event_id", id).Error("failed to delete event")
+		return err
+	}
+	r.log.WithField("event_id", id).Info("event deleted successfully")
+	return nil
 }
 
 func (r *EventRepoPostgres) scanRow(scanner interface{ Scan(dest ...any) error }) (*domain.Event, error) {
@@ -105,74 +123,77 @@ func (r *EventRepoPostgres) GetByID(ctx context.Context, id uuid.UUID) (*domain.
 }
 
 func (r *EventRepoPostgres) Find(ctx context.Context, f domain.EventFilter) ([]*domain.Event, error) {
-    if f.Limit <= 0 { f.Limit = 50 }
+	if f.Limit <= 0 {
+		f.Limit = 50
+	}
 
-    baseFields := `id, organization_id, title, description, location, event_type,
+	baseFields := `id, organization_id, title, description, location, event_type,
                    color, start_at, end_at, is_all_day, recurrence_rule,
                    scope, cohort_id, section_id, user_id,
                    source_id, source_type, image_url, created_at, updated_at`
 
-    commonFilter := ` AND organization_id = $1 AND deleted_at IS NULL`
-    
-    timeAndTypeFilter := ` AND (start_at <= $2 AND (end_at >= $3 OR end_at IS NULL))`
-    args := []any{f.OrganizationID, f.EndTime, f.StartTime}
-    placeholderID := 4
+	commonFilter := ` AND organization_id = $1 AND deleted_at IS NULL`
 
-    if len(f.Types) > 0 {
-        timeAndTypeFilter += fmt.Sprintf(" AND event_type = ANY($%d)", placeholderID)
-        args = append(args, pq.Array(f.Types))
-        placeholderID++
-    }
+	timeAndTypeFilter := ` AND (start_at <= $2 AND (end_at >= $3 OR end_at IS NULL))`
+	args := []any{f.OrganizationID, f.EndTime, f.StartTime}
+	placeholderID := 4
 
-    var subQueries []string
+	if len(f.Types) > 0 {
+		timeAndTypeFilter += fmt.Sprintf(" AND event_type = ANY($%d)", placeholderID)
+		args = append(args, pq.Array(f.Types))
+		placeholderID++
+	}
 
-    if f.IncludeGlobal {
-        subQueries = append(subQueries, fmt.Sprintf("SELECT %s FROM events WHERE scope = 'global' %s %s", 
-            baseFields, commonFilter, timeAndTypeFilter))
-    }
+	var subQueries []string
 
-    if f.UserID != nil && *f.UserID != uuid.Nil {
-        subQueries = append(subQueries, fmt.Sprintf("SELECT %s FROM events WHERE user_id = $%d %s %s", 
-            baseFields, placeholderID, commonFilter, timeAndTypeFilter))
-        args = append(args, f.UserID)
-        placeholderID++
-    }
+	if f.IncludeGlobal {
+		subQueries = append(subQueries, fmt.Sprintf("SELECT %s FROM events WHERE scope = 'global' %s %s",
+			baseFields, commonFilter, timeAndTypeFilter))
+	}
 
-    if len(f.SectionIDs) > 0 {
-        subQueries = append(subQueries, fmt.Sprintf("SELECT %s FROM events WHERE section_id = ANY($%d) %s %s", 
-            baseFields, placeholderID, commonFilter, timeAndTypeFilter))
-        args = append(args, pq.Array(f.SectionIDs))
-        placeholderID++
-    }
+	if f.UserID != nil && *f.UserID != uuid.Nil {
+		subQueries = append(subQueries, fmt.Sprintf("SELECT %s FROM events WHERE user_id = $%d %s %s",
+			baseFields, placeholderID, commonFilter, timeAndTypeFilter))
+		args = append(args, f.UserID)
+		placeholderID++
+	}
 
-    if len(f.CohortIDs) > 0 {
-        subQueries = append(subQueries, fmt.Sprintf("SELECT %s FROM events WHERE cohort_id = ANY($%d) %s %s", 
-            baseFields, placeholderID, commonFilter, timeAndTypeFilter))
-        args = append(args, pq.Array(f.CohortIDs))
-        placeholderID++
-    }
+	if len(f.SectionIDs) > 0 {
+		subQueries = append(subQueries, fmt.Sprintf("SELECT %s FROM events WHERE section_id = ANY($%d) %s %s",
+			baseFields, placeholderID, commonFilter, timeAndTypeFilter))
+		args = append(args, pq.Array(f.SectionIDs))
+		placeholderID++
+	}
 
-    if len(subQueries) == 0 {
-        return []*domain.Event{}, nil
-    }
+	if len(f.CohortIDs) > 0 {
+		subQueries = append(subQueries, fmt.Sprintf("SELECT %s FROM events WHERE cohort_id = ANY($%d) %s %s",
+			baseFields, placeholderID, commonFilter, timeAndTypeFilter))
+		args = append(args, pq.Array(f.CohortIDs))
+		placeholderID++
+	}
 
-    finalQuery := fmt.Sprintf("(%s) ORDER BY start_at ASC, title ASC LIMIT $%d OFFSET $%d", 
-        strings.Join(subQueries, ") UNION ALL ("), placeholderID, placeholderID+1)
-    args = append(args, f.Limit, f.Offset)
+	if len(subQueries) == 0 {
+		return []*domain.Event{}, nil
+	}
 
-    rows, err := r.db.QueryContext(ctx, finalQuery, args...)
-    if err != nil {
-        return nil, fmt.Errorf("union find events failed: %w", err)
-    }
-    defer rows.Close()
+	finalQuery := fmt.Sprintf("(%s) ORDER BY start_at ASC, title ASC LIMIT $%d OFFSET $%d",
+		strings.Join(subQueries, ") UNION ALL ("), placeholderID, placeholderID+1)
+	args = append(args, f.Limit, f.Offset)
 
-    var events []*domain.Event
-    for rows.Next() {
-        e, err := r.scanRow(rows)
-        if err != nil {
-            return nil, err
-        }
-        events = append(events, e)
-    }
-    return events, nil
+	rows, err := r.db.QueryContext(ctx, finalQuery, args...)
+	if err != nil {
+		r.log.WithError(err).WithField("org_id", f.OrganizationID).Error("union find events failed")
+		return nil, fmt.Errorf("union find events failed: %w", err)
+	}
+	defer rows.Close()
+
+	var events []*domain.Event
+	for rows.Next() {
+		e, err := r.scanRow(rows)
+		if err != nil {
+			return nil, err
+		}
+		events = append(events, e)
+	}
+	return events, nil
 }
