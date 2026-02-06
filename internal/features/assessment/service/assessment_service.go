@@ -6,16 +6,19 @@ import (
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/assessment/delivery/dto"
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/assessment/domain"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type assessmentService struct {
 	repo domain.AssessmentRepo
+	log  *logrus.Logger
 }
 
 // NewAssessmentService creates a new assessment service
-func NewAssessmentService(repo domain.AssessmentRepo) AssessmentService {
+func NewAssessmentService(repo domain.AssessmentRepo, log *logrus.Logger) AssessmentService {
 	return &assessmentService{
 		repo: repo,
+		log:  log,
 	}
 }
 
@@ -23,12 +26,14 @@ func (s *assessmentService) GetStudentAssessments(ctx context.Context, userID uu
 	// Get summary
 	summary, err := s.repo.GetStudentAssessmentSummary(ctx, userID, filter)
 	if err != nil {
+		s.log.WithError(err).WithField("user_id", userID).Error("failed to get student assessment summary")
 		return nil, err
 	}
 
 	// Get assessment list
 	items, err := s.repo.GetStudentAssessments(ctx, userID, filter)
 	if err != nil {
+		s.log.WithError(err).WithField("user_id", userID).Error("failed to get student assessments")
 		return nil, err
 	}
 
