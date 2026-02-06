@@ -7,15 +7,18 @@ import (
 
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/cohort/domain"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type CohortRepositoryPostgres struct {
-	db *sql.DB
+	db  *sql.DB
+	log *logrus.Logger
 }
 
-func NewCohortRepository(db *sql.DB) domain.CohortRepository {
+func NewCohortRepository(db *sql.DB, log *logrus.Logger) domain.CohortRepository {
 	return &CohortRepositoryPostgres{
-		db: db,
+		db:  db,
+		log: log,
 	}
 }
 
@@ -37,9 +40,11 @@ func (r *CohortRepositoryPostgres) Create(ctx context.Context, cohort *domain.Co
 	)
 
 	if err != nil {
+		r.log.WithError(err).WithField("cohort_id", cohort.ID).Error("failed to create cohort")
 		return fmt.Errorf("failed to create cohort: %w", err)
 	}
 
+	r.log.WithFields(logrus.Fields{"cohort_id": cohort.ID, "name": cohort.Name}).Info("cohort created successfully")
 	return nil
 }
 
@@ -50,6 +55,7 @@ func (r *CohortRepositoryPostgres) GetIDsByUserID(ctx context.Context, userID uu
 
 	rows, err := r.db.QueryContext(ctx, query, userID)
 	if err != nil {
+		r.log.WithError(err).WithField("user_id", userID).Error("failed to query cohort ids by user")
 		return nil, err
 	}
 	defer rows.Close()
@@ -88,9 +94,11 @@ func (r *CohortRepositoryPostgres) GetByID(ctx context.Context, id uuid.UUID) (*
 	)
 
 	if err == sql.ErrNoRows {
+		r.log.WithField("cohort_id", id).Debug("cohort not found by id")
 		return nil, nil
 	}
 	if err != nil {
+		r.log.WithError(err).WithField("cohort_id", id).Error("failed to get cohort by id")
 		return nil, fmt.Errorf("failed to get cohort by id: %w", err)
 	}
 
