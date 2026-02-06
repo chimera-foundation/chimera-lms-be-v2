@@ -38,18 +38,18 @@ type BootstrapConfig struct {
 
 func Bootstrap(config *BootstrapConfig) {
 	// 1. Setup Repositories
-	userRepo := postgres.NewUserRepo(config.DB)
-	roleRepo := postgres.NewRoleRepository(config.DB)
+	userRepo := postgres.NewUserRepo(config.DB, config.Log)
+	roleRepo := postgres.NewRoleRepository(config.DB, config.Log)
 
 	// Event Dependencies
-	eventRepo := eventPostgres.NewEventRepository(config.DB)
-	orgRepo := orgPostgres.NewOrganizationRepo(config.DB)
-	enrollmentRepo := enrollmentPostgres.NewEnrollmentRepository(config.DB)
-	cohortRepo := cohortPostgres.NewCohortRepository(config.DB)
-	sectionRepo := sectionPostgres.NewSectionRepository(config.DB)
+	eventRepo := eventPostgres.NewEventRepository(config.DB, config.Log)
+	orgRepo := orgPostgres.NewOrganizationRepo(config.DB, config.Log)
+	enrollmentRepo := enrollmentPostgres.NewEnrollmentRepository(config.DB, config.Log)
+	cohortRepo := cohortPostgres.NewCohortRepository(config.DB, config.Log)
+	sectionRepo := sectionPostgres.NewSectionRepository(config.DB, config.Log)
 
 	// Assessment Dependencies
-	assessmentRepo := assessmentPostgres.NewAssessmentRepoPostgres(config.DB)
+	assessmentRepo := assessmentPostgres.NewAssessmentRepoPostgres(config.DB, config.Log)
 
 	secret := config.Config.GetString("JWT_SECRET_KEY")
 	expiryMinutes := config.Config.GetInt("ACCESS_TOKEN_EXPIRE_MINUTES")
@@ -61,7 +61,7 @@ func Bootstrap(config *BootstrapConfig) {
 	tokenProvider := auth.NewJWTProvider(secret, expiryDuration, config.Redis)
 
 	// 2. Setup Services/UseCases
-	authService := service.NewAuthService(userRepo, roleRepo, tokenProvider)
+	authService := service.NewAuthService(userRepo, roleRepo, tokenProvider, config.Log)
 
 	eventService := eventService.NewEventService(
 		eventRepo,
@@ -70,14 +70,15 @@ func Bootstrap(config *BootstrapConfig) {
 		cohortRepo,
 		sectionRepo,
 		config.Redis,
+		config.Log,
 	)
 
-	assessmentSvc := assessmentService.NewAssessmentService(assessmentRepo)
+	assessmentSvc := assessmentService.NewAssessmentService(assessmentRepo, config.Log)
 
 	// 3. Setup Controllers/Handlers
-	userHandler := http.NewUserHandler(authService)
-	eventHandler := eventHttp.NewEventHandler(eventService)
-	assessmentHandler := assessmentHttp.NewAssessmentHandler(assessmentSvc)
+	userHandler := http.NewUserHandler(authService, config.Log)
+	eventHandler := eventHttp.NewEventHandler(eventService, config.Log)
+	assessmentHandler := assessmentHttp.NewAssessmentHandler(assessmentSvc, config.Log)
 
 	// 4. Setup Routes
 	config.Router.Route("/api/v1", func(r chi.Router) {
