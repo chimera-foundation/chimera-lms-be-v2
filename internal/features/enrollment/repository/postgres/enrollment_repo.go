@@ -7,15 +7,18 @@ import (
 
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/enrollment/domain"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type EnrollmentRepositoryPostgres struct {
-	db *sql.DB
+	db  *sql.DB
+	log *logrus.Logger
 }
 
-func NewEnrollmentRepository(db *sql.DB) domain.EnrollmentRepository {
+func NewEnrollmentRepository(db *sql.DB, log *logrus.Logger) domain.EnrollmentRepository {
 	return &EnrollmentRepositoryPostgres{
-		db: db,
+		db:  db,
+		log: log,
 	}
 }
 
@@ -39,9 +42,11 @@ func (r *EnrollmentRepositoryPostgres) Create(ctx context.Context, enrollment *d
 	)
 
 	if err != nil {
+		r.log.WithError(err).WithField("enrollment_id", enrollment.ID).Error("failed to create enrollment")
 		return fmt.Errorf("failed to create enrollment: %w", err)
 	}
 
+	r.log.WithFields(logrus.Fields{"enrollment_id": enrollment.ID, "user_id": enrollment.UserID}).Info("enrollment created successfully")
 	return nil
 }
 
@@ -53,6 +58,7 @@ func (r *EnrollmentRepositoryPostgres) GetActiveSectionIDsByUserID(ctx context.C
 
 	rows, err := r.db.QueryContext(ctx, query, userID)
 	if err != nil {
+		r.log.WithError(err).WithField("user_id", userID).Error("failed to query active section ids")
 		return nil, err
 	}
 	defer rows.Close()
@@ -69,6 +75,7 @@ func (r *EnrollmentRepositoryPostgres) GetActiveSectionIDsByUserID(ctx context.C
 	}
 
 	if err := rows.Err(); err != nil {
+		r.log.WithError(err).WithField("user_id", userID).Error("error iterating active section ids")
 		return nil, err
 	}
 
