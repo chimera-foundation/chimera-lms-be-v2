@@ -13,15 +13,18 @@ import (
 	response "github.com/chimera-foundation/chimera-lms-be-v2/internal/shared/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type EventHandler struct {
 	eventService service.EventService
+	log          *logrus.Logger
 }
 
-func NewEventHandler(eventService service.EventService) *EventHandler {
+func NewEventHandler(eventService service.EventService, log *logrus.Logger) *EventHandler {
 	return &EventHandler{
 		eventService: eventService,
+		log:          log,
 	}
 }
 
@@ -44,12 +47,14 @@ func (h *EventHandler) ProtectedRoutes() chi.Router {
 func (h *EventHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateEventRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.log.WithError(err).Warn("invalid request payload for create event")
 		response.BadRequest(w, "Invalid request payload")
 		return
 	}
 
 	orgID, ok := auth.GetOrgID(r.Context())
 	if !ok {
+		h.log.Warn("organization not found in context for create event")
 		response.Unauthorized(w, "Organization not found in context")
 		return
 	}
@@ -75,6 +80,7 @@ func (h *EventHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 
 	createdEvent, err := h.eventService.CreateEvent(r.Context(), event)
 	if err != nil {
+		h.log.WithError(err).Error("failed to create event")
 		response.InternalServerError(w, err.Error())
 		return
 	}
@@ -111,6 +117,7 @@ func (h *EventHandler) GetCalendar(w http.ResponseWriter, r *http.Request) {
 
 	events, err := h.eventService.GetCalendarForUser(r.Context(), userID, startTime, endTime)
 	if err != nil {
+		h.log.WithError(err).WithField("user_id", userID).Error("failed to get calendar for user")
 		response.InternalServerError(w, err.Error())
 		return
 	}
@@ -148,6 +155,7 @@ func (h *EventHandler) GetSectionSchedule(w http.ResponseWriter, r *http.Request
 
 	events, err := h.eventService.GetSectionSchedule(r.Context(), sectionID, startTime, endTime)
 	if err != nil {
+		h.log.WithError(err).WithField("section_id", sectionID).Error("failed to get section schedule")
 		response.InternalServerError(w, err.Error())
 		return
 	}
@@ -178,6 +186,7 @@ func (h *EventHandler) GetAnnouncements(w http.ResponseWriter, r *http.Request) 
 
 	events, err := h.eventService.GetAnnouncements(r.Context(), orgID, startTime, endTime, limit, offset)
 	if err != nil {
+		h.log.WithError(err).Error("failed to get announcements")
 		response.InternalServerError(w, err.Error())
 		return
 	}
@@ -208,6 +217,7 @@ func (h *EventHandler) GetEvents(w http.ResponseWriter, r *http.Request) {
 
 	events, err := h.eventService.GetEvents(r.Context(), orgID, startTime, endTime, limit, offset)
 	if err != nil {
+		h.log.WithError(err).Error("failed to get events")
 		response.InternalServerError(w, err.Error())
 		return
 	}
