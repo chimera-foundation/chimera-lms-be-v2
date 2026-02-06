@@ -9,15 +9,18 @@ import (
 
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/assessment/domain"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type AssessmentRepoPostgres struct {
-	db *sql.DB
+	db  *sql.DB
+	log *logrus.Logger
 }
 
-func NewAssessmentRepoPostgres(db *sql.DB) domain.AssessmentRepo {
+func NewAssessmentRepoPostgres(db *sql.DB, log *logrus.Logger) domain.AssessmentRepo {
 	return &AssessmentRepoPostgres{
-		db: db,
+		db:  db,
+		log: log,
 	}
 }
 
@@ -49,9 +52,11 @@ func (r *AssessmentRepoPostgres) Create(ctx context.Context, assessment *domain.
 	)
 
 	if err != nil {
+		r.log.WithError(err).WithField("assessment_id", assessment.ID).Error("failed to insert assessment")
 		return fmt.Errorf("failed to insert assessment: %w", err)
 	}
 
+	r.log.WithFields(logrus.Fields{"assessment_id": assessment.ID, "title": assessment.Title}).Info("assessment created successfully")
 	return nil
 }
 
@@ -120,6 +125,7 @@ func (r *AssessmentRepoPostgres) GetStudentAssessments(ctx context.Context, user
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
+		r.log.WithError(err).WithField("user_id", userID).Error("failed to query student assessments")
 		return nil, fmt.Errorf("failed to query student assessments: %w", err)
 	}
 	defer rows.Close()
@@ -156,6 +162,7 @@ func (r *AssessmentRepoPostgres) GetStudentAssessments(ctx context.Context, user
 	}
 
 	if err := rows.Err(); err != nil {
+		r.log.WithError(err).WithField("user_id", userID).Error("error iterating student assessments")
 		return nil, fmt.Errorf("error iterating student assessments: %w", err)
 	}
 
@@ -223,6 +230,7 @@ func (r *AssessmentRepoPostgres) GetStudentAssessmentSummary(ctx context.Context
 		&summary.Overdue,
 	)
 	if err != nil {
+		r.log.WithError(err).WithField("user_id", userID).Error("failed to get student assessment summary")
 		return nil, fmt.Errorf("failed to get student assessment summary: %w", err)
 	}
 
