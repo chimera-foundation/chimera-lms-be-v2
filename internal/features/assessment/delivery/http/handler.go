@@ -10,15 +10,18 @@ import (
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared/auth"
 	response "github.com/chimera-foundation/chimera-lms-be-v2/internal/shared/utils"
 	"github.com/go-chi/chi/v5"
+	"github.com/sirupsen/logrus"
 )
 
 type AssessmentHandler struct {
 	assessmentService service.AssessmentService
+	log               *logrus.Logger
 }
 
-func NewAssessmentHandler(assessmentService service.AssessmentService) *AssessmentHandler {
+func NewAssessmentHandler(assessmentService service.AssessmentService, log *logrus.Logger) *AssessmentHandler {
 	return &AssessmentHandler{
 		assessmentService: assessmentService,
+		log:               log,
 	}
 }
 
@@ -38,6 +41,7 @@ func (h *AssessmentHandler) ProtectedRoutes() chi.Router {
 func (h *AssessmentHandler) GetStudentAssessments(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.GetUserID(r.Context())
 	if !ok {
+		h.log.Warn("user not found in context for get student assessments")
 		response.Unauthorized(w, "User not found in context")
 		return
 	}
@@ -84,6 +88,7 @@ func (h *AssessmentHandler) GetStudentAssessments(w http.ResponseWriter, r *http
 
 	result, err := h.assessmentService.GetStudentAssessments(r.Context(), userID, filter)
 	if err != nil {
+		h.log.WithError(err).WithField("user_id", userID).Error("failed to get student assessments")
 		response.InternalServerError(w, err.Error())
 		return
 	}
