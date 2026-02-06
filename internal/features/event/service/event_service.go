@@ -11,10 +11,11 @@ import (
 	en "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/enrollment/domain"
 	e "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/event/domain"
 	o "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/organization/domain"
-	s "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/section/domain"
+	sec "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/section/domain"
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared/auth"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+	"github.com/sirupsen/logrus"
 )
 
 type eventService struct {
@@ -22,8 +23,9 @@ type eventService struct {
 	orgRepo        o.OrganizationRepository
 	enrollmentRepo en.EnrollmentRepository
 	cohortRepo     c.CohortRepository
-	sectionRepo    s.SectionRepository // for staff/teachers
+	sectionRepo    sec.SectionRepository
 	redis          *redis.Client
+	log            *logrus.Logger
 }
 
 func NewEventService(
@@ -31,8 +33,9 @@ func NewEventService(
 	orgRepo o.OrganizationRepository,
 	enrollmentRepo en.EnrollmentRepository,
 	cohortRepo c.CohortRepository,
-	sectionRepo s.SectionRepository,
+	sectionRepo sec.SectionRepository,
 	redis *redis.Client,
+	log *logrus.Logger,
 ) EventService {
 	return &eventService{
 		repo:           repo,
@@ -41,11 +44,13 @@ func NewEventService(
 		cohortRepo:     cohortRepo,
 		sectionRepo:    sectionRepo,
 		redis:          redis,
+		log:            log,
 	}
 }
 
 func (s *eventService) CreateEvent(ctx context.Context, e *e.Event) (*e.Event, error) {
 	if err := e.Validate(); err != nil {
+		s.log.WithError(err).Warn("event validation failed")
 		return nil, err
 	}
 
@@ -56,9 +61,11 @@ func (s *eventService) CreateEvent(ctx context.Context, e *e.Event) (*e.Event, e
 
 	err := s.repo.Create(ctx, e)
 	if err != nil {
+		s.log.WithError(err).WithField("event_id", e.ID).Error("failed to create event")
 		return nil, err
 	}
 
+	s.log.WithFields(logrus.Fields{"event_id": e.ID, "title": e.Title}).Info("event created successfully")
 	return e, nil
 }
 
@@ -74,6 +81,7 @@ func (s *eventService) GetCalendarForUser(ctx context.Context, userID uuid.UUID,
 
 	orgID, ok := auth.GetOrgID(ctx)
 	if !ok {
+		s.log.WithField("user_id", userID).Warn("organization id not found in context")
 		return nil, errors.New("organization id not found")
 	}
 
@@ -114,6 +122,7 @@ func (s *eventService) GetCalendarForUser(ctx context.Context, userID uuid.UUID,
 
 	events, err := s.repo.Find(ctx, filter)
 	if err != nil {
+		s.log.WithError(err).WithField("user_id", userID).Error("failed to find events for user calendar")
 		return nil, err
 	}
 
@@ -128,6 +137,7 @@ func (s *eventService) GetCalendarForUser(ctx context.Context, userID uuid.UUID,
 func (s *eventService) GetSectionSchedule(ctx context.Context, sectionID uuid.UUID, start, end time.Time) ([]*e.Event, error) {
 	orgID, ok := auth.GetOrgID(ctx)
 	if !ok {
+		s.log.WithField("section_id", sectionID).Warn("failed at getting organization id")
 		return nil, errors.New("failed at getting organization id")
 	}
 
@@ -189,25 +199,34 @@ func (s *eventService) flushUserCache(ctx context.Context, userID uuid.UUID) {
 
 func (s *eventService) UpdateEvent(ctx context.Context, e *e.Event) (*e.Event, error) {
 	if err := e.Validate(); err != nil {
+		s.log.WithError(err).WithField("event_id", e.ID).Warn("event validation failed on update")
 		return nil, err
 	}
 
 	// Ensure the event exists before updating
 	existing, err := s.repo.GetByID(ctx, e.ID)
 	if err != nil || existing == nil {
+		s.log.WithField("event_id", e.ID).Warn("event not found for update")
 		return nil, errors.New("event not found")
 	}
 
 	// Business Logic: Prevent moving events across Organizations
 	if existing.OrganizationID != e.OrganizationID {
+		s.log.WithField("event_id", e.ID).Warn("unauthorized: organization mismatch on update")
 		return nil, errors.New("unauthorized: organization mismatch")
 	}
 
 	err = s.repo.Update(ctx, e)
-	if err == nil && e.UserID != nil {
+	if err != nil {
+		s.log.WithError(err).WithField("event_id", e.ID).Error("failed to update event")
+		return nil, err
+	}
+
+	if e.UserID != nil {
 		s.flushUserCache(ctx, *e.UserID)
 	}
 
+	s.log.WithField("event_id", e.ID).Info("event updated successfully")
 	return e, nil
 }
 
