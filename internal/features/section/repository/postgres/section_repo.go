@@ -7,15 +7,18 @@ import (
 
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/section/domain"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type SectionRepositoryPostgres struct {
-	db *sql.DB
+	db  *sql.DB
+	log *logrus.Logger
 }
 
-func NewSectionRepository(db *sql.DB) domain.SectionRepository {
+func NewSectionRepository(db *sql.DB, log *logrus.Logger) domain.SectionRepository {
 	return &SectionRepositoryPostgres{
-		db: db,
+		db:  db,
+		log: log,
 	}
 }
 
@@ -37,9 +40,11 @@ func (r *SectionRepositoryPostgres) Create(ctx context.Context, section *domain.
 	)
 
 	if err != nil {
+		r.log.WithError(err).WithField("section_id", section.ID).Error("failed to create section")
 		return fmt.Errorf("failed to create section: %w", err)
 	}
 
+	r.log.WithFields(logrus.Fields{"section_id": section.ID, "name": section.Name}).Info("section created successfully")
 	return nil
 }
 
@@ -50,6 +55,7 @@ func (r *SectionRepositoryPostgres) GetSectionIDsByUserID(ctx context.Context, u
 
 	rows, err := r.db.QueryContext(ctx, query, userID)
 	if err != nil {
+		r.log.WithError(err).WithField("user_id", userID).Error("failed to query section ids by user")
 		return nil, err
 	}
 	defer rows.Close()
@@ -66,6 +72,7 @@ func (r *SectionRepositoryPostgres) GetSectionIDsByUserID(ctx context.Context, u
 	}
 
 	if err := rows.Err(); err != nil {
+		r.log.WithError(err).WithField("user_id", userID).Error("error iterating section ids")
 		return nil, err
 	}
 
@@ -87,10 +94,12 @@ func (r *SectionRepositoryPostgres) GetByID(ctx context.Context, id uuid.UUID) (
 	)
 
 	if err == sql.ErrNoRows {
+		r.log.WithField("section_id", id).Debug("section not found by id")
 		return nil, nil
 	}
 
 	if err != nil {
+		r.log.WithError(err).WithField("section_id", id).Error("failed to get section by id")
 		return nil, fmt.Errorf("failed to get section by id: %w", err)
 	}
 
