@@ -2,6 +2,8 @@ package app
 
 import (
 	"database/sql"
+	"log"
+	gohttp "net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -9,13 +11,16 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
-	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/delivery/http"
+	userHttp "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/delivery/http"
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/repository/postgres"
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/features/user/service"
 
 	assessmentHttp "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/assessment/delivery/http"
 	assessmentPostgres "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/assessment/repository/postgres"
 	assessmentService "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/assessment/service"
+	attachmentHttp "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/attachment/delivery/http"
+	attachmentPostgres "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/attachment/repository/postgres"
+	attachmentService "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/attachment/service"
 	cohortPostgres "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/cohort/repository/postgres"
 	enrollmentPostgres "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/enrollment/repository/postgres"
 	eventHttp "github.com/chimera-foundation/chimera-lms-be-v2/internal/features/event/delivery/http"
@@ -26,6 +31,7 @@ import (
 
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/middleware"
 	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared/auth"
+	"github.com/chimera-foundation/chimera-lms-be-v2/internal/shared/storage"
 )
 
 type BootstrapConfig struct {
@@ -51,6 +57,35 @@ func Bootstrap(config *BootstrapConfig) {
 	// Assessment Dependencies
 	assessmentRepo := assessmentPostgres.NewAssessmentRepoPostgres(config.DB, config.Log)
 
+	// Attachment Dependencies
+	attachmentRepo := attachmentPostgres.NewAttachmentRepoPostgres(config.DB, config.Log)
+
+	// Storage backend
+	storageType := config.Config.GetString("STORAGE_TYPE")
+	if storageType == "" {
+		storageType = "local"
+	}
+
+	var fileStorage storage.FileStorage
+	switch storageType {
+	case "local":
+		localPath := config.Config.GetString("STORAGE_LOCAL_PATH")
+		if localPath == "" {
+			localPath = "./uploads"
+		}
+		serveURL := config.Config.GetString("STORAGE_LOCAL_SERVE_URL")
+		if serveURL == "" {
+			serveURL = "/uploads"
+		}
+		var err error
+		fileStorage, err = storage.NewLocalStorage(localPath, serveURL)
+		if err != nil {
+			log.Fatalf("failed to initialize local storage: %v", err)
+		}
+	default:
+		log.Fatalf("unsupported storage type: %s", storageType)
+	}
+
 	secret := config.Config.GetString("JWT_SECRET_KEY")
 	expiryMinutes := config.Config.GetInt("ACCESS_TOKEN_EXPIRE_MINUTES")
 	if expiryMinutes == 0 {
@@ -74,11 +109,13 @@ func Bootstrap(config *BootstrapConfig) {
 	)
 
 	assessmentSvc := assessmentService.NewAssessmentService(assessmentRepo, config.Log)
+	attachmentSvc := attachmentService.NewAttachmentService(attachmentRepo, fileStorage, config.Log)
 
 	// 3. Setup Controllers/Handlers
-	userHandler := http.NewUserHandler(authService, config.Log)
+	userHandler := userHttp.NewUserHandler(authService, config.Log)
 	eventHandler := eventHttp.NewEventHandler(eventService, config.Log)
 	assessmentHandler := assessmentHttp.NewAssessmentHandler(assessmentSvc, config.Log)
+	attachmentHandler := attachmentHttp.NewAttachmentHandler(attachmentSvc, config.Log)
 
 	// 4. Setup Routes
 	config.Router.Route("/api/v1", func(r chi.Router) {
@@ -92,6 +129,19 @@ func Bootstrap(config *BootstrapConfig) {
 			r.Mount("/users", userHandler.ProtectedRoutes())
 			r.Mount("/events", eventHandler.ProtectedRoutes())
 			r.Mount("/assessments", assessmentHandler.ProtectedRoutes())
+			r.Mount("/attachments", attachmentHandler.ProtectedRoutes())
 		})
 	})
+
+	// Serve uploaded files as static content
+	localPath := config.Config.GetString("STORAGE_LOCAL_PATH")
+	if localPath == "" {
+		localPath = "./uploads"
+	}
+	serveURL := config.Config.GetString("STORAGE_LOCAL_SERVE_URL")
+	if serveURL == "" {
+		serveURL = "/uploads"
+	}
+	fileServer := gohttp.FileServer(gohttp.Dir(localPath))
+	config.Router.Handle(serveURL+"/*", gohttp.StripPrefix(serveURL, fileServer))
 }
